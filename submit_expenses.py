@@ -213,7 +213,9 @@ def build_description(entry: dict, dec: Decision) -> str:
     # 優先順位: 人が指定した description（overrides.json）> ハウススタイル > OCR が読んだ説明
     desc = entry.get("description")
     if not desc:
-        if label.startswith("会議費") or label.startswith("接待交際費"):
+        if label.startswith("接待交際費"):
+            desc = "親睦のため"
+        elif label.startswith("会議費"):
             desc = "打ち合わせ"
         elif label in ("通信費", "雑費"):
             # サブスク・クラウド系はサービス名を残したいので OCR の説明を使う
@@ -223,7 +225,8 @@ def build_description(entry: dict, dec: Decision) -> str:
 
     # 参加者フルネームを付与（会議費・接待交際費・贈答）
     if label.startswith("会議費") or label.startswith("接待交際費") or dec.tid == T_GIFT:
-        participants = entry.get("participants") or []
+        from predict_meal import clean_names
+        participants = clean_names(entry.get("participants") or [], set())
         if participants and not any(p in desc for p in participants):
             desc = f"{desc}　{'、'.join(participants)}"
     if entry.get("shareholder"):
@@ -376,6 +379,10 @@ def main():
         d = decisions[id(e)]
         if d.warn:
             warnings.append(f"{e['date']}  {e.get('vendor','')}  ¥{int(e['amount']):,}  → {d.warn}")
+    for e in entries:
+        if e.get("guessed") and int(e.get("amount", 0)) >= 20000:
+            warnings.append(f"{e['date']}  {e.get('vendor','')}  ¥{int(e['amount']):,}  → 人数が推定のため"
+                            f"「一人1万円以下/超」の判定を確認（実人数は overrides.json の people で指定）")
     for e in outside:
         warnings.append(f"{e['date']}  {e.get('vendor','')}  ¥{int(e['amount']):,}  "
                         f"→ 対象月外の日付（{args.year}年{args.month}月以外）。利用日に直すか overrides.json で上書きを")

@@ -35,6 +35,33 @@ def norm_vendor(v: str) -> str:
     return re.sub(r"[\s・･/／\-]", "", v).lower()
 
 
+def to_hiragana_name(name: str) -> str | None:
+    """名前をひらがなだけにする。カタカナ→ひらがな、所属（漢字・英字）の前置きは落とす。
+    例: 三井不動産なかむらしょうご → なかむらしょうご / タナカ → たなか。ひらがな3文字未満なら None"""
+    n = unicodedata.normalize("NFKC", name or "")
+    n = "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in n)
+    runs = re.findall(r"[ぁ-ゖー]+", n)
+    if not runs:
+        return None
+    best = max(runs, key=len).strip("ー")
+    return best if len(best) >= 3 else None
+
+
+def clean_names(names: list[str], roster: set[str]) -> list[str]:
+    """ひらがな化し、苗字だけ（きたもと）は社内名簿のフルネーム（きたもとなおひろ）に寄せる。重複は除く"""
+    out: list[str] = []
+    for n in names:
+        h = to_hiragana_name(n)
+        if not h:
+            continue
+        full = [r for r in roster if r.startswith(h) and r != h]
+        if len(full) == 1:
+            h = full[0]
+        if h not in out and h != "さわだいっせい":
+            out.append(h)
+    return out
+
+
 def load_history() -> list[dict]:
     if not os.path.exists(HISTORY_PATH):
         return []
@@ -81,7 +108,24 @@ def _recent(history: list[dict], ref: date) -> list[dict]:
 
 
 def predict(entry: dict, history: list[dict] | None = None) -> dict | None:
-    """会議費/接待交際費のエントリに対し {participants, external, basis} を返す。対象外なら None"""
+    """会議費/接待交際費のエントリに対し {participants(ひらがな), external, basis} を返す。対象外なら None。
+    実績から名前が取れない場合も、社内名簿の最多の人で必ず埋める（空欄にしない）"""
+    g = _predict_raw(entry, history)
+    if g is None and (entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費")):
+        return None
+    history = history if history is not None else load_history()
+    roster = internal_roster(history)
+    names = clean_names(g["participants"], roster) if g else []
+    if not names:
+        c = Counter(p for h in history for p in clean_names(h["people"], roster))
+        names = [c.most_common(1)[0][0]] if c else []
+        g = {"external": False, "basis": "実績から特定できず。最も多く同席している人で仮置き"}
+    if not names:
+        return None
+    return {"participants": names, "external": bool(g["external"]), "basis": g["basis"]}
+
+
+def _predict_raw(entry: dict, history: list[dict] | None = None) -> dict | None:
     if entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費"):
         return None
     history = history if history is not None else load_history()

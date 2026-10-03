@@ -173,7 +173,11 @@ def decide(entry: dict) -> Decision:
                 warn = None
             return Decision(tid, label, None, warn)
 
-        # ¥5,000 超はすべて接待交際費。一人あたり金額で 10,000 以下/超 を分ける
+        # ¥5,000 超はすべて接待交際費。基本は「一人1万円以下」（実績 141件 vs 19件。澤田さん方針）。
+        # 1万円超にするのは、人が実人数（people）か参加者を指定して一人1万円を超えたときだけ。
+        # 推定（guessed）の人数では 1万円超にしない。
+        if entry.get("guessed") and not entry.get("people"):
+            return Decision(T_ENT_LOW, "接待交際費(10000以下・基本)", None, None)
         if people:
             per = amount / people
             if per > PER_PERSON_LIMIT:
@@ -181,9 +185,8 @@ def decide(entry: dict) -> Decision:
                                 None if participants else "参加者未記入")
             return Decision(T_ENT_LOW, f"接待交際費(一人¥{per:,.0f}・10000以下)", None,
                             None if participants else "参加者未記入")
-        # 人数不明: 合計 ¥30,000 以上なら 10,000超 と仮置き（要確認）
-        tid = T_ENT_HIGH if amount >= 30000 else T_ENT_LOW
-        return Decision(tid, "接待交際費(人数不明・要確認)", None, "参加者/人数未記入 → 一人あたり判定不可")
+        # 人数不明 → 基本どおり一人1万円以下
+        return Decision(T_ENT_LOW, "接待交際費(10000以下・基本)", None, None)
 
     # --- サブスク・その他 → 雑費（テンプレートを名前で解決。無ければ消耗品テンプレ + 勘定科目上書き）---
     return Decision(T_SUPPLY, "雑費", "雑費", template_name="雑費")

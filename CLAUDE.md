@@ -248,6 +248,7 @@ python3 submit_expenses.py --month 8
 | 403 Forbidden (receipts) | トークンが古いスコープ | 再認可（上記） |
 | 400 明細行を入力してください | 明細形式が旧式 | client.py が line_template_id のネスト形式か確認 |
 | 400 sub_receipt_ids 関連 | 補足資料の項目名が変わった | `--no-suica-attach` で登録し、Suica 一覧は UI から手動添付 |
+| 500 エラー（申請作成時） | 同じ証憑を複数の明細に補足資料として付けた | 補足資料は行ごとに別アップロード（実装済み）。途中で止まったら `--skip-suica` で残りだけ作る。アップロード済み証憑は `upload_cache.json` で再利用 |
 | git push 403 | リポジトリ名変更（test-labs → yadokari-labs） | 時間を置いて再試行、または `git remote set-url origin https://github.com/isseisawada/yadokari-labs.git` |
 
 ### 事後（申請確定後）
@@ -272,6 +273,9 @@ python3 submit_expenses.py --month 8
 | 2026年8月 | 1/3 Suica 31件 ¥11,125 | 18784480 | 補足資料に Suica 一覧 |
 | 2026年8月 | 2/3 領収書 30件 ¥84,204 | 18784482 | |
 | 2026年8月 | 3/3 領収書 23件 ¥233,319 | 18784484 | |
+| 2026年9月 | 1/3 Suica 35件 ¥11,177 | 19224117 | 補足資料に Suica 一覧 |
+| 2026年9月 | 2/3 領収書 30件 ¥205,256 | 19224173 | ドル払いはカード明細の円額＋明細画像 |
+| 2026年9月 | 3/3 領収書 12件 ¥28,416 | 19224175 | 2/3・3/3 は `--skip-suica` で再実行して作成 |
 
 ## 2026年8月分の振り返り（review_submission.py の結果から）
 

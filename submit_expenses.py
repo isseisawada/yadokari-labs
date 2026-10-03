@@ -200,6 +200,8 @@ def build_description(entry: dict, dec: Decision) -> str:
         route   = f"{from_st} → {to_st}" if to_st else from_st
         return f"打ち合わせ（{route}）"
 
+    vendor = entry.get("vendor") or ""
+
     # 内容欄のハウススタイル（2026年8月分の実績に合わせる）:
     #   - 店名・ベンダー名は書かない。「何のためか」だけを書く
     #   - 参加者がいれば 全角スペース + 「、」区切りのフルネーム

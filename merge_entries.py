@@ -112,6 +112,8 @@ def main():
         dropped: list[dict] = []
         for ov in overrides:
             m = ov.get("match", {})
+            if not m:          # "_comment" だけの行などは無視
+                continue
             def hit(e: dict) -> bool:
                 if "vendor" in m and m["vendor"] not in (e.get("vendor") or ""):
                     return False

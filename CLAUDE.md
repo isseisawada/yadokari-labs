@@ -250,7 +250,7 @@ python3 submit_expenses.py --month 8
 
 - Client Secret 保管確認（1Password 等）。チャットに貼った Secret は再生成して無効化する
 - 新しいルール/勘定科目マッピング変更があれば CLAUDE.md に追記
-- 次月分: 翌月頭に本ワークフロー実施（`--month 9`）
+- 次月分: 翌月頭に本ワークフロー実施（`--month 9`）。`inputs_2026MM/` と空の overrides.json は事前に用意しておく
 
 ### 効率化のコツ
 

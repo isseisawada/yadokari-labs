@@ -1,0 +1,3 @@
+[
+  {"_comment": "9月分の手修正。書き方: {\"match\": {\"vendor\": \"店名の一部\", \"date\": \"2026-09-15\"}, \"set\": {\"participants\": [\"うえすぎせいた\"], \"external\": false}} / 出張: \"set\": {\"account\": \"宿泊費\", \"trip\": \"熊本出張\"} / 除外: \"drop\": true"}
+]

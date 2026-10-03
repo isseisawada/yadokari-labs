@@ -56,8 +56,8 @@ T_PARKING      = 300525  # 駐車場代
 T_HOTEL        = 300527  # 宿泊費
 T_MEETING_IN   = 300528  # 会議費（社内）
 T_MEETING_EXT  = 300529  # 会議費（社外）
-T_ENT_LOW      = 300530  # 接待交際費（一人税込10,000円以下）
-T_ENT_HIGH     = 300531  # 接待交際費（一人税込10,000円超）
+T_ENT_LOW      = 337299  # 接待交際費（一人税込10,000円以下）※300530 は【使わない】5,000円版
+T_ENT_HIGH     = 337300  # 接待交際費（一人税込10,000円超）※300531 は【使わない】5,000円版
 T_GIFT         = 300532  # 取引先への贈答・手土産代（税込3,000円以内）
 T_RENTACAR     = 300522  # レンタカー料金
 T_SUPPLY       = 300535  # 備品消耗品（事務用品等）※ 名前解決できないときのフォールバック用
@@ -447,6 +447,8 @@ def main():
                 marks += f" 📄補足資料x{len(subs)}"
             elif is_suica and i == 0 and idx == 0 and suica_files:
                 marks += f" 📄補足資料x{len(suica_files)}(要UP)"
+            if e.get("guessed"):
+                marks += f"  🔮推定（{e.get('guess_basis','')}）"
             if d.warn:
                 marks += f"  ⚠{d.warn}"
             print(f"  {ln.expense_date}  [{d.label}]  {ln.description}  ¥{ln.amount:,}{marks}")
@@ -460,6 +462,13 @@ def main():
         created.append((title, result["id"]))
         print(f"  → 申請ID: {result['id']}\n")
 
+    guessed = [e for e in entries if e.get("guessed")]
+    if guessed:
+        print("=" * 60)
+        print(f"🔮 参加者・社内/社外を過去実績から推定した行 {len(guessed)} 件（違うものだけ overrides.json で直す）")
+        for e in guessed:
+            print(f"  {e['date']}  {e.get('vendor','')}  ¥{int(e['amount']):,}  → "
+                  f"{'、'.join(e['participants'])}（{'社外' if e.get('external') else '社内'}）  …{e.get('guess_basis','')}")
     if warnings:
         print("=" * 60)
         print(f"⚠ 要確認 {len(warnings)} 件（entries.json の participants / people を埋めてください）")

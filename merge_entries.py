@@ -91,7 +91,7 @@ def main():
         carried = 0
         for e in receipts:
             p = prev.get(e.get("receipt_path"))
-            if not p:
+            if not p or p.get("guessed"):   # 推定値は引き継がず毎回推定し直す
                 continue
             hit = False
             for k in ("participants", "people", "external", "shareholder"):
@@ -138,6 +138,23 @@ def main():
             receipts = [e for e in receipts if e not in dropped]
         print(f"overrides.json: {applied} 件に適用、{len(dropped)} 件を除外")
 
+    # 会議費・接待交際費で参加者が空のものは、過去の申請実績から推定して埋める（guessed=True）
+    from predict_meal import load_history, predict
+    history = load_history()
+    n_guess = 0
+    for e in receipts:
+        if e.get("participants"):
+            continue
+        g = predict(e, history)
+        if g:
+            e["participants"] = g["participants"]
+            e.setdefault("external", g["external"])
+            e["guessed"] = True
+            e["guess_basis"] = g["basis"]
+            n_guess += 1
+    if n_guess:
+        print(f"参加者を過去実績から推定: {n_guess} 件（ドライランで「推定」と表示されます。違えば overrides.json で上書き）")
+
     merged = suica + receipts
     merged.sort(key=lambda e: (e["date"], 0 if e.get("kind") == "suica" else 1))
 
@@ -150,7 +167,8 @@ def main():
         else:
             desc = f"[{e.get('account','?')}] {e.get('vendor','')}"
             if e.get("participants"):
-                desc += "  参加者:" + "・".join(e["participants"])
+                desc += ("  推定:" if e.get("guessed") else "  参加者:") + "、".join(e["participants"])
+                desc += "（社外）" if e.get("external") else "（社内）"
         print(f"  {i:02d}. {e['date']}  {desc}  ¥{int(e['amount']):,}")
 
     # 対象月外の日付を目立たせる（領収書の発行日をそのまま拾ってしまったケースの検出）

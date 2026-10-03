@@ -298,23 +298,35 @@ def to_line(entry: dict, dec: Decision, receipt_id: int | None, sub_receipt_ids:
     )
 
 
-def upload_files(client: FreeeClient, paths: list[str], what: str) -> dict[str, int]:
-    """path → receipt_id（同一パスは1回だけ）"""
-    cache: dict[str, int] = {}
-    if not paths:
-        return cache
-    print(f"{what}アップロード中（{len(paths)} 件）...")
+def upload_files(client: FreeeClient, paths: list[str], what: str,
+                 cache: dict[str, int] | None = None, cache_path: str | None = None) -> dict[str, int]:
+    """path → receipt_id。cache に既にあるパスはアップロードしない（再実行時の二重アップロード防止）"""
+    cache = cache if cache is not None else {}
+    out: dict[str, int] = {}
+    todo = [p for p in paths if p not in cache]
     for p in paths:
-        full = p if os.path.isabs(p) else os.path.join(HERE, p)
+        if p in cache:
+            out[p] = cache[p]
+    if todo:
+        print(f"{what}アップロード中（{len(todo)} 件{'・' + str(len(paths) - len(todo)) + ' 件は前回分を再利用' if len(paths) > len(todo) else ''}）...")
+    elif paths:
+        print(f"{what}: {len(paths)} 件すべて前回アップロード分を再利用")
+    for p in todo:
+        full = p.split("#")[0]
+        full = full if os.path.isabs(full) else os.path.join(HERE, full)
         if not os.path.exists(full):
             print(f"  ⚠ ファイル未検出: {p}")
             continue
         try:
-            cache[p] = client.upload_receipt(full)
+            out[p] = cache[p] = client.upload_receipt(full)
+            if cache_path:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump(cache, f, ensure_ascii=False, indent=1)
         except Exception as e:
             print(f"  ⚠ アップロード失敗 {p}: {e}")
-    print()
-    return cache
+    if todo:
+        print()
+    return out
 
 
 def chunks(items: list, size: int) -> list[list]:
@@ -329,6 +341,8 @@ def main():
     ap.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="領収書系の1申請あたり件数（既定 30）")
     ap.add_argument("--suica-batch-size", type=int, default=0, help="Suica の1申請あたり件数。0 = 分割せず1申請にまとめる（既定）")
     ap.add_argument("--no-suica-attach", action="store_true", help="Suica 一覧ファイルを補足資料として添付しない")
+    ap.add_argument("--skip-suica", action="store_true",
+                    help="Suica 申請は作成済みなので作らない（番号 X/N は通しのまま。途中で失敗した再実行用）")
     args = ap.parse_args()
 
     base       = os.path.join(HERE, f"inputs_{args.year}{args.month:02d}")
@@ -420,15 +434,34 @@ def main():
         print(f"エラー: 勘定科目 ID を解決できません: {unresolved}。freee の勘定科目名を確認してください。")
         sys.exit(1)
 
-    # アップロード（実行モードのみ）
+    # アップロード（実行モードのみ）。結果は upload_cache.json に保存し、再実行時は再利用する
+    cache_path = os.path.join(base, "upload_cache.json")
+    upload_cache: dict[str, int] = {}
+    if os.path.exists(cache_path):
+        with open(cache_path, encoding="utf-8") as f:
+            upload_cache = json.load(f)
+    else:
+        # 初回実行でキャッシュが無かったときの救済: upload_seed.json（アップロード順の ID 一覧）から復元
+        seed_path = os.path.join(base, "upload_seed.json")
+        if os.path.exists(seed_path):
+            with open(seed_path, encoding="utf-8") as f:
+                seed = json.load(f)
+            rpaths = sorted({e["receipt_path"] for e in receipt_entries if e.get("receipt_path")})
+            if len(seed.get("receipts", [])) == len(rpaths):
+                upload_cache.update(dict(zip(rpaths, seed["receipts"])))
+                print(f"upload_seed.json から前回アップロード済みの領収書 {len(rpaths)} 件を再利用します")
+            else:
+                print(f"⚠ upload_seed.json の件数（{len(seed.get('receipts', []))}）と領収書の件数（{len(rpaths)}）が違うので使いません")
     if not args.dry_run:
-        receipt_ids = upload_files(client, sorted({e["receipt_path"] for e in receipt_entries if e.get("receipt_path")}), "領収書")
-        if suica_batches and suica_files:
-            m = upload_files(client, suica_files, "Suica一覧（補足資料）")
+        receipt_ids = upload_files(client, sorted({e["receipt_path"] for e in receipt_entries if e.get("receipt_path")}),
+                                   "領収書", upload_cache, cache_path)
+        if suica_batches and suica_files and not args.skip_suica:
+            m = upload_files(client, suica_files, "Suica一覧（補足資料）", upload_cache, cache_path)
             suica_file_ids = [m[p] for p in suica_files if p in m]
-        # 行ごとの補足資料（ドル払いのカード明細など）。同じファイルは1回だけアップロード
-        extra_paths = sorted({p for e in receipt_entries for p in (e.get("sub_receipt_paths") or [])})
-        sub_ids = upload_files(client, extra_paths, "補足資料") if extra_paths else {}
+        # 行ごとの補足資料（ドル払いのカード明細など）。freee は1つの証憑を複数の明細に付けられない（500 になる）ので
+        # 同じファイルでも行ごとに別々にアップロードする（キー: パス#行のreceipt_path）
+        extra_keys = sorted({f"{p}#{e.get('receipt_path', '')}" for e in receipt_entries for p in (e.get("sub_receipt_paths") or [])})
+        sub_ids = upload_files(client, extra_keys, "補足資料", upload_cache, cache_path) if extra_keys else {}
 
     # 申請の組み立て
     plan: list[tuple[str, str, list[dict], bool]] = []   # (title, description, batch, is_suica)
@@ -460,7 +493,8 @@ def main():
             subs = suica_file_ids if (is_suica and i == 0 and idx == 0) else None
             own_subs = e.get("sub_receipt_paths") or []
             if own_subs:
-                subs = (subs or []) + [sub_ids[p] for p in own_subs if p in sub_ids]
+                keys = [f"{p}#{e.get('receipt_path', '')}" for p in own_subs]
+                subs = (subs or []) + [sub_ids[k] for k in keys if k in sub_ids]
             ln = to_line(e, d, rid, subs, account_ids)
             lines.append(ln)
             marks = ""
@@ -480,6 +514,9 @@ def main():
         print(f"  備考: {app_desc}\n")
 
         if args.dry_run:
+            continue
+        if is_suica and args.skip_suica:
+            print("  → 作成済みのためスキップ（--skip-suica）\n")
             continue
         app = ExpenseApplication(title=title, lines=lines, description=app_desc,
                                  approval_flow_route_id=APPROVAL_FLOW_ROUTE_ID)

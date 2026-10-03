@@ -220,14 +220,7 @@ class FreeeClient:
             body["approval_flow_route_id"] = application.approval_flow_route_id
             print(f"  承認経路 ID: {application.approval_flow_route_id}")
 
-        # 部門(section)が必須の会社向けに自動付与
-        try:
-            sections = self._get("/api/1/sections", {"company_id": company_id}).get("sections", [])
-            if sections:
-                body["section_id"] = sections[0]["id"]
-                print(f"  部門を自動設定: {sections[0]['name']} (ID={sections[0]['id']})")
-        except Exception:
-            pass
+        # 部門(section) は付けない（承認経路 1469199 で決まる。以前は sections[0]=「BETTARA（使わない）」を付けていた）
 
         result = self._post("/api/1/expense_applications", body)
         app = result["expense_application"]

@@ -72,7 +72,7 @@ BOOK_KEYWORDS  = ["書店", "書籍", "ブックス", "BOOKS", "BOOK", "紀伊�
                   "TSUTAYA", "文教堂", "くまざわ", "ttc lifestyle"]
 GIFT_KEYWORDS  = ["ASORA", "エアポートサービス", "JAL PLAZA", "PLUSTA", "リテイリング", "手土産", "土産", "ギフト"]
 COMM_KEYWORDS  = ["google cloud", "anthropic", "aws", "amazon web", "openai", "microsoft", "azure", "vercel",
-                  "x developer", "dropbox",
+                  "x developer", "dropbox", "gemini", "ai studio",
                   "github", "ntt", "docomo", "softbank", "kddi", "通信"]
 RENTACAR_KEYWORDS = ["レンタカー", "rent a car", "rentacar", "カーシェア", "times car", "ニッポンレンタカー", "オリックスレンタカー"]
 FLIGHT_KEYWORDS = ["flight", "airline", "航空", "qunar", "peach", "jetstar", "skymark", "solaseed", "スカイマーク", "ジェットスター", "ソラシド"]
@@ -397,6 +397,7 @@ def main():
     client: FreeeClient | None = None
     receipt_ids: dict[str, int] = {}
     suica_file_ids: list[int] = []
+    sub_ids: dict[str, int] = {}
     if not args.dry_run:
         client = FreeeClient()
     # 名前指定のテンプレート（新聞図書費など）を解決して tid を差し替え
@@ -422,6 +423,9 @@ def main():
         if suica_batches and suica_files:
             m = upload_files(client, suica_files, "Suica一覧（補足資料）")
             suica_file_ids = [m[p] for p in suica_files if p in m]
+        # 行ごとの補足資料（ドル払いのカード明細など）。同じファイルは1回だけアップロード
+        extra_paths = sorted({p for e in receipt_entries for p in (e.get("sub_receipt_paths") or [])})
+        sub_ids = upload_files(client, extra_paths, "補足資料") if extra_paths else {}
 
     # 申請の組み立て
     plan: list[tuple[str, str, list[dict], bool]] = []   # (title, description, batch, is_suica)
@@ -451,6 +455,9 @@ def main():
             d = decisions[id(e)]
             rid = receipt_ids.get(e.get("receipt_path", ""))
             subs = suica_file_ids if (is_suica and i == 0 and idx == 0) else None
+            own_subs = e.get("sub_receipt_paths") or []
+            if own_subs:
+                subs = (subs or []) + [sub_ids[p] for p in own_subs if p in sub_ids]
             ln = to_line(e, d, rid, subs, account_ids)
             lines.append(ln)
             marks = ""
@@ -460,6 +467,8 @@ def main():
                 marks += f" 📄補足資料x{len(subs)}"
             elif is_suica and i == 0 and idx == 0 and suica_files:
                 marks += f" 📄補足資料x{len(suica_files)}(要UP)"
+            elif own_subs:
+                marks += f" 📄補足資料x{len(own_subs)}(要UP)"
             if e.get("guessed"):
                 marks += f"  🔮推定（{e.get('guess_basis','')}）"
             if d.warn:

@@ -52,7 +52,7 @@
 - ○○パーク / 駐車場 / パーキング → 300525 駐車場代
 - STATION WORK → 300528 会議費（社内）、内容は `オフィスブース利用（STATION WORK 東京駅）`
 - Soil work / Staple → **雑費**
-- **Google Cloud / Anthropic(Claude API) / AWS / 通信 → 通信費**（8月分で修正されたもの）
+- **API 課金・クラウド（Google Cloud / Gemini / Anthropic / OpenAI / X Developer / AWS）・Dropbox → 通信費**
 - **note / iTunes(NewsPicks) / その他サブスク → 雑費**（freee に「雑費」テンプレートがある。勘定科目は支払手数料）
 - **ホテル・宿泊（スリーサウザンド 等） → 宿泊費**
 - **レンタカー・カーシェア → レンタカー料金**（300522）
@@ -290,7 +290,7 @@ python3 submit_expenses.py --month 8
 | 会議費 社内→社外 (2件) | `external` 未指定を社内扱い | 参加者ありで `external` 未指定なら ⚠ を出す |
 | TTC LIFESTYLE 9/2 のまま申請 | Web 領収書の発行日/DL日を利用日にしていた | OCR で利用日優先。対象月外は ⚠ に列挙 |
 | 足立タクシー 9/2 のまま | overrides.json を直したが merge を回さず submit した | overrides.json が entries.json より新しければ submit を停止 |
-| Anthropic の金額違い | USD 請求の円換算額が領収書と一致しない | 請求書の円建て金額を overrides で指定するか、freee 側で調整 |
+| Anthropic の金額違い | USD 請求の円換算額が領収書と一致しない | **カード明細の円額に合わせる**（下記「ドル払い」） |
 | ココカラファイン 1件 → 2件に分割 | 1レシートに複数用途 | 分割が必要なものは freee UI で対応（自動化しない） |
 
 **次月の運用で効く順**
@@ -316,3 +316,14 @@ python3 submit_expenses.py --month 8
 - 名前はひらがなに正規化（カタカナ→ひらがな、所属の前置きは落とす、苗字だけは社内名簿のフルネームに寄せる）
 - ¥20,000 以上の推定行はドライランで ⚠（推定人数で一人1万円以下/超が決まるため。実人数は overrides.json の `people`）
 - 実績データの更新: 申請が承認されたら、Claude に「meal_history を更新して」と頼む（freee から再取得）
+
+## ドル払い（API 課金など）の金額（2026年9月分〜）
+
+- 金額は **カード明細の円の引き落とし額** に合わせる（領収書の円換算額や OCR の値は使わない）
+- 澤田さんがカード明細の「ドル円為替」画像を用意 → `inputs_2026MM/supplements/` に置く
+- overrides.json で `amount`（円額）と `sub_receipt_paths`（明細画像）を指定 → 各行に補足資料として添付される
+  ```json
+  {"match": {"vendor": "OpenAI", "amount": 3465}, "set": {"amount": 3615, "account": "通信費",
+   "sub_receipt_paths": ["inputs_202609/supplements/card_fx_202609.png"]}}
+  ```
+- OCR は USD 金額を円と読むことがある（9月: Dropbox 131.87 USD → ¥131 と誤読、実際は ¥21,910）

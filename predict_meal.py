@@ -117,7 +117,7 @@ def predict(entry: dict, history: list[dict] | None = None) -> dict | None:
     if "station work" in vl or "jr東日本ビルディング" in vl:
         return None
     g = _predict_raw(entry, history)
-    if g is None and (entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費")):
+    if g is None and (entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費", "贈答・手土産代")):
         return None
     history = history if history is not None else load_history()
     roster = internal_roster(history)
@@ -132,7 +132,7 @@ def predict(entry: dict, history: list[dict] | None = None) -> dict | None:
 
 
 def _predict_raw(entry: dict, history: list[dict] | None = None) -> dict | None:
-    if entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費"):
+    if entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費", "贈答・手土産代"):
         return None
     history = history if history is not None else load_history()
     if not history:

@@ -229,6 +229,9 @@ def build_description(entry: dict, dec: Decision) -> str:
         elif label in ("通信費", "雑費"):
             # サブスク・クラウド系はサービス名を残したいので OCR の説明を使う
             desc = entry.get("ocr_description") or f"{vendor} 利用料"
+            # 情報サービス（NewsPicks 等）は先頭に「知識獲得のため」（2026年9月分で澤田さんが修正）
+            if label == "雑費" and any(k in (vendor + desc).lower() for k in ("newspicks", "itunes")):
+                desc = f"知識獲得のため　{desc}"
         else:
             desc = purpose_by_label.get(dec.label) or purpose_by_label.get(label) or "打ち合わせ"
 
@@ -477,7 +480,7 @@ def main():
     suica_ref = "・".join(str(x) for x in suica_app_numbers)
     for b in receipt_batches:
         n += 1
-        note = f"電車交通費は申請{suica_ref}にまとめています。" if suica_app_numbers else ""
+        note = ""   # 「電車交通費は申請Xにまとめています。」は不要（2026年9月分で澤田さんが削除）
         plan.append((f"経費精算申請{n}/{total_batches}",
                      f"{args.year}年{args.month}月分 経費精算 {len(b)}件 合計¥{sum(int(e['amount']) for e in b):,}。{note}",
                      b, False))

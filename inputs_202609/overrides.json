@@ -1,3 +1,24 @@
 [
-  {"_comment": "9月分の手修正。書き方: {\"match\": {\"vendor\": \"店名の一部\", \"date\": \"2026-09-15\"}, \"set\": {\"participants\": [\"うえすぎせいた\"], \"external\": false}} / 出張: \"set\": {\"account\": \"宿泊費\", \"trip\": \"熊本出張\"} / 除外: \"drop\": true"}
+  {"_comment": "9月分の手修正。カレンダーで確認できたものを反映（2026-10-03）"},
+
+  {"_comment": "金沢出張 9/9-9/10（石川県庁。上杉・梶山・田中と同行）"},
+  {"match": {"vendor": "東日本旅客鉄道", "date": "2026-09-09"}, "set": {"trip": "金沢出張"}},
+  {"match": {"vendor": "東日本旅客鉄道", "date": "2026-09-10"}, "set": {"trip": "金沢出張"}},
+  {"match": {"vendor": "金沢玉寿司"}, "set": {"participants": ["たなかあつし", "うえすぎせいた", "かじやまだいき"], "external": false}},
+  {"match": {"vendor": "潮屋"}, "set": {"participants": ["いしかわけんちょう"]}},
+  {"match": {"vendor": "からくり屋"}, "set": {"participants": ["いしかわけんちょう"]}},
+
+  {"_comment": "9/11 夜 相馬さん会食（上杉同席）"},
+  {"match": {"vendor": "内田日和"}, "set": {"participants": ["そうまゆき", "うえすぎせいた"], "people": 3}},
+
+  {"_comment": "9/4 評価会議（上杉・梶山）の日、9/16 は夕方に上杉さんと星川で面談"},
+  {"match": {"vendor": "きよし", "date": "2026-09-04"}, "set": {"participants": ["うえすぎせいた", "かじやまだいき"]}},
+  {"match": {"vendor": "きよし", "date": "2026-09-16"}, "set": {"participants": ["うえすぎせいた"]}},
+
+  {"_comment": "note は株主関係の購読"},
+  {"match": {"vendor": "note"}, "set": {"account": "雑費", "description": "月刊 谷尻誠 購読料　株主たにじりまこと親睦のため"}},
+
+  {"_comment": "OCR できなかった PDF（repark_receipt_20260903_660_7266720.pdf）を手で追加"},
+  {"add": {"date": "2026-09-03", "vendor": "リパーク", "amount": 660, "account": "駐車場代",
+           "receipt_path": "inputs_202609/web_receipts/repark_receipt_20260903_660_7266720.pdf"}}
 ]

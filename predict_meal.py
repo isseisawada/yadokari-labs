@@ -47,12 +47,15 @@ def to_hiragana_name(name: str) -> str | None:
     return best if len(best) >= 3 else None
 
 
+NOT_NAME = ["ふるまい", "めんばー", "ため", "うちあわせ", "しゃない", "ぷろでゅーす", "ちーむ", "こんしんかい", "さしいれ"]
+
+
 def clean_names(names: list[str], roster: set[str]) -> list[str]:
     """ひらがな化し、苗字だけ（きたもと）は社内名簿のフルネーム（きたもとなおひろ）に寄せる。重複は除く"""
     out: list[str] = []
     for n in names:
         h = to_hiragana_name(n)
-        if not h:
+        if not h or any(w in h for w in NOT_NAME):
             continue
         full = [r for r in roster if r.startswith(h) and r != h]
         if len(full) == 1:
@@ -110,6 +113,9 @@ def _recent(history: list[dict], ref: date) -> list[dict]:
 def predict(entry: dict, history: list[dict] | None = None) -> dict | None:
     """会議費/接待交際費のエントリに対し {participants(ひらがな), external, basis} を返す。対象外なら None。
     実績から名前が取れない場合も、社内名簿の最多の人で必ず埋める（空欄にしない）"""
+    vl = (entry.get("vendor") or "").lower()
+    if "station work" in vl or "jr東日本ビルディング" in vl:
+        return None
     g = _predict_raw(entry, history)
     if g is None and (entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費")):
         return None

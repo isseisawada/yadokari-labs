@@ -72,6 +72,7 @@ BOOK_KEYWORDS  = ["書店", "書籍", "ブックス", "BOOKS", "BOOK", "紀伊�
                   "TSUTAYA", "文教堂", "くまざわ", "ttc lifestyle"]
 GIFT_KEYWORDS  = ["ASORA", "エアポートサービス", "JAL PLAZA", "PLUSTA", "リテイリング", "手土産", "土産", "ギフト"]
 COMM_KEYWORDS  = ["google cloud", "anthropic", "aws", "amazon web", "openai", "microsoft", "azure", "vercel",
+                  "x developer", "dropbox",
                   "github", "ntt", "docomo", "softbank", "kddi", "通信"]
 RENTACAR_KEYWORDS = ["レンタカー", "rent a car", "rentacar", "カーシェア", "times car", "ニッポンレンタカー", "オリックスレンタカー"]
 FLIGHT_KEYWORDS = ["flight", "airline", "航空", "qunar", "peach", "jetstar", "skymark", "solaseed", "スカイマーク", "ジェットスター", "ソラシド"]
@@ -122,6 +123,10 @@ def decide(entry: dict) -> Decision:
     # --- 新聞図書費（書店・書籍・電子書籍・情報サービス）---
     if "新聞図書費" in account or "図書" in account or any(k.lower() in vl for k in BOOK_KEYWORDS):
         return Decision(T_SUPPLY, "新聞図書費", "新聞図書費", template_name="新聞図書費")
+
+    # --- STATION WORK（発行元は JR東日本ビルディング）: JR 判定より先に ---
+    if "station work" in vl or "jr東日本ビルディング" in vl or "ｊｒ東日本ビルディング" in vl:
+        return Decision(T_MEETING_IN, "オフィスブース")
 
     # --- 交通系（ベンダー名で判定） ---
     if "飛行機" in account or any(k in vl for k in FLIGHT_KEYWORDS):
@@ -202,6 +207,7 @@ def build_description(entry: dict, dec: Decision) -> str:
         "高速・有料道路":      "高速道路利用",
         "ガソリン代":          "打ち合わせ",      # 移動目的として「打ち合わせ」と書く運用
         "備品消耗品":          "消耗品",
+        "オフィスブース":      "オフィスブース利用（STATION WORK）",
         "新聞図書費":          "知識獲得のため",
         "宿泊費":              entry.get("trip") or "出張",
         "レンタカー料金":      entry.get("trip") or "出張利用",

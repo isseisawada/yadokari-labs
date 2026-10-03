@@ -45,7 +45,7 @@ def fix_receipt(entry: dict, year: int) -> dict:
     vl = vendor.lower()
     if "google cloud" in vl or "apple" in vl or "note" in vl or "staple" in vl or "soil" in fname.lower():
         entry["account"] = "雑費"
-    if "station work" in vl:
+    if "station work" in vl or "jr東日本ビルディング" in vl:
         entry["account"] = "会議費"
         if not entry.get("description"):
             entry["description"] = "オフィスブース利用（STATION WORK）"
@@ -111,6 +111,10 @@ def main():
         applied = 0
         dropped: list[dict] = []
         for ov in overrides:
+            if "add" in ov:    # OCR できなかった領収書などを手で追加
+                a = dict(ov["add"]); a.setdefault("kind", "receipt"); a.setdefault("participants", [])
+                receipts.append(a); applied += 1
+                continue
             m = ov.get("match", {})
             if not m:          # "_comment" だけの行などは無視
                 continue

@@ -316,6 +316,24 @@
     .bottom-nav-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-top: 1px solid var(--border); padding: 10px 16px; display: none; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
     .bottom-nav-bar .btn-save { padding: 10px 36px; font-size: 1.04rem; font-weight: 700; border-radius: 10px; border: none; background: var(--p); color: white; cursor: pointer; font-family: inherit; transition: background .15s; margin-left: 12px; white-space: nowrap; flex-shrink: 0; }
     .bottom-nav-bar .btn-save:hover { background: var(--p-hover); }
+    .bottom-nav-bar .btn-save:disabled { opacity: .55; cursor: default; }
+    .req-by-wrap { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--t2); }
+    .req-by-sel { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.85rem; background: white; color: var(--t1); max-width: 160px; }
+    .admin-tab-badge { display: inline-block; margin-left: 5px; min-width: 17px; padding: 0 5px; border-radius: 9px; background: #DC2626; color: #fff; font-size: 0.68rem; font-weight: 700; line-height: 17px; text-align: center; }
+    .pc-note { font-size: 0.8rem; color: var(--t3); line-height: 1.7; margin-bottom: 12px; }
+    .pc-empty { font-size: 0.85rem; color: var(--t3); padding: 8px 0; }
+    .pc-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: white; }
+    .pc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .pc-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+    .pc-pending  { background: #FEF3C7; color: #92400E; }
+    .pc-approved { background: #D1FAE5; color: #065F46; }
+    .pc-rejected { background: #FEE2E2; color: #991B1B; }
+    .pc-meta { font-size: 0.76rem; color: var(--t3); }
+    .pc-list { list-style: none; margin: 0; padding: 0; }
+    .pc-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 0.83rem; border-top: 1px solid var(--bg); }
+    .pc-lbl { color: var(--t2); }
+    .pc-val { white-space: nowrap; }
+    .pc-before { color: var(--t3); text-decoration: line-through; }
     .btn-label-short { display: none; }
     body[data-mode="admin"] { padding-bottom: 64px; }
     .app-footer { text-align: center; padding: 24px 16px 32px; font-size: 0.78rem; color: var(--t3); }
@@ -495,6 +513,9 @@
       .bottom-nav-bar .mode-nb, .hdr-modes .mode-nb { padding: 5px 9px; font-size: 0.72rem; }
       .hdr-modes { gap: 4px; }
       .bottom-nav-bar .btn-save { padding: 8px 21px; font-size: 0.99rem; margin-left: 4px; }
+      .req-by-wrap label { display: none; }
+      .req-by-sel { max-width: 108px; padding: 7px 8px; font-size: 0.78rem; }
+      .pc-list li { flex-direction: column; gap: 2px; }
       /* モバイル: ロゴ縮小・モードボタン短縮ラベルでヘッダーの横はみ出しを防止 */
       .logo img { width: 116px; }
       .mode-full { display: none; }
@@ -611,7 +632,7 @@
   <div class="admin-hdr">
     <div>
       <h2>価格管理</h2>
-      <div class="admin-hdr-sub">各項目の売価・原価を編集できます。営業利益率が自動計算されます。</div>
+      <div class="admin-hdr-sub">各項目の売価・原価を編集できます。金額の変更はマネージャーの承認後に全員へ反映されます。</div>
     </div>
     <div class="admin-actions">
       <input type="file" id="csvUploadInput" accept=".csv" style="display:none" onchange="uploadAdminCSV(event)">
@@ -652,7 +673,8 @@
 
 <!-- BOTTOM SAVE BAR (admin mode only) -->
 <nav class="bottom-nav-bar" id="bottomNav">
-  <button class="btn-save" id="adminSaveBtn" onclick="saveAdminPrices()" style="display:none"><span class="btn-label-full">修正内容を保存する</span><span class="btn-label-short">修正を保存</span></button>
+  <span id="reqByWrap" class="req-by-wrap" style="display:none"><label for="reqBySel">申請者</label><select id="reqBySel" class="req-by-sel"></select></span>
+  <button class="btn-save" id="adminSaveBtn" onclick="submitPriceApproval()" style="display:none"><span class="btn-label-full">変更を承認申請する</span><span class="btn-label-short">承認申請</span></button>
 </nav>
 
 <!-- COMPLETION PAGE -->
@@ -2851,6 +2873,8 @@ function switchMode(m) {
   // hide series nav and confirm button when not in create mode
   document.getElementById('sNav').style.display = (m === 'create') ? '' : 'none';
   document.getElementById('adminSaveBtn').style.display = (m === 'admin') ? '' : 'none';
+  document.getElementById('reqByWrap').style.display = (m === 'admin') ? '' : 'none';
+  if (m === 'admin') { populateRequesterSelect(); refreshPendingList().then(() => { if (state.mode === 'admin' && !_isTyping()) renderAdmin(); }); }
   document.getElementById('bottomNav').style.display = (m === 'admin') ? 'flex' : 'none';
   if (m === 'create')  update();   // 管理画面で追加/削除したカスタム項目を作成画面に反映
   if (m === 'admin')   renderAdmin();
@@ -2878,8 +2902,8 @@ function priceRow(label, size, priceKey, costKey, price, cost) {
   return `<tr>
     <td class="item-name">${escapeHtml(label)}</td>
     <td>${size ? `<span class="item-size">${size}</span>` : ''}</td>
-    <td><input type="number" step="10000" data-key="${priceKey}" value="${price||0}"></td>
-    <td><input type="number" step="10000" data-key="${costKey}" value="${cost||0}"></td>
+    <td><input type="number" step="10000" data-key="${priceKey}" data-orig="${price||0}" data-label="${escapeAttr(fullLabel)}｜売価" value="${price||0}"></td>
+    <td><input type="number" step="10000" data-key="${costKey}" data-orig="${cost||0}" data-label="${escapeAttr(fullLabel)}｜原価" value="${cost||0}"></td>
     <td class="margin-col">${marginCell(price, cost)}</td>
     <td class="cst-memo-cell"><input type="text" class="memo-inp" data-memo-key="${memoKey}" placeholder="メモ" value="${memoVal}"><button class="cst-del-btn" title="非表示にする" data-lbl="${escapeAttr(fullLabel)}" onclick="hideItem('${hideKey}', this.dataset.lbl)">×</button></td>
   </tr>`;
@@ -2952,12 +2976,16 @@ const ADMIN_TABS = [
   { id:'broker',  label:'中古仲介車両' },
   { id:'chassis', label:'シャーシ' },
   { id:'other',   label:'その他車両' },
+  { id:'approval', label:'承認待ち' },
 ];
 
 function renderAdmin() {
   const tab = _adminTab;
   let html = `<nav class="admin-tab-nav">${
-    ADMIN_TABS.map(t => `<button class="admin-tab" data-tab="${t.id}"${t.id===tab?' data-active':''}>${t.label}</button>`).join('')
+    ADMIN_TABS.map(t => {
+      const n = (t.id === 'approval') ? pendingCount() : 0;
+      return `<button class="admin-tab" data-tab="${t.id}"${t.id===tab?' data-active':''}>${t.label}${n ? `<span class="admin-tab-badge">${n}</span>` : ''}</button>`;
+    }).join('')
   }</nav>`;
 
   const tableStart = (title, hasSize) => `
@@ -3108,13 +3136,15 @@ function renderAdmin() {
     html += tableEndAdd('otherMisc');
   }
 
+  if (tab === 'approval') html += renderApprovalSection();
+
   if (tab === 'broker') {
     // 仲介手数料率（両手）
     html += `<div class="admin-section">
       <h3><span>仲介手数料の料率</span></h3>
       <div class="rate-grid">
-        <div class="rate-field"><label>売主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:seller" value="${brokerRate('seller')}"></div>
-        <div class="rate-field"><label>買主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:buyer" value="${brokerRate('buyer')}"></div>
+        <div class="rate-field"><label>売主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:seller" data-orig="${brokerRate('seller')}" data-label="仲介手数料率｜売主から（％）" value="${brokerRate('seller')}"></div>
+        <div class="rate-field"><label>買主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:buyer" data-orig="${brokerRate('buyer')}" data-label="仲介手数料率｜買主から（％）" value="${brokerRate('buyer')}"></div>
       </div>
       <div class="rate-note">車両売価に対する料率です。買主分は顧客へのご請求に加算され、売主分は社内シミュレーションにのみ計上されます。</div>
     </div>`;
@@ -3139,7 +3169,7 @@ function renderAdmin() {
   // 非表示にした項目の復元
   const hiddenKeys = Object.keys(HIDDEN_ITEMS);
   if (hiddenKeys.length) {
-    html += `<div class="admin-section">
+    if (tab !== 'approval') html += `<div class="admin-section">
       <h3><span>非表示にした項目（${hiddenKeys.length}）</span></h3>
       <div class="hidden-list">${
         hiddenKeys.map(k => `<div class="hidden-item"><span>${escapeHtml(HIDDEN_ITEMS[k] || k)}</span><button class="hidden-restore" onclick="unhideItem('${k}')">戻す</button></div>`).join('')
@@ -3149,6 +3179,13 @@ function renderAdmin() {
 
   const root = document.getElementById('adminContent');
   root.innerHTML = html;
+
+  // 承認待ちタブでは申請ボタンを出さない
+  const saveBtn = document.getElementById('adminSaveBtn');
+  if (saveBtn && state.mode === 'admin') saveBtn.style.display = (tab === 'approval') ? 'none' : '';
+  const reqWrap = document.getElementById('reqByWrap');
+  if (reqWrap && state.mode === 'admin') reqWrap.style.display = (tab === 'approval') ? 'none' : '';
+  populateRequesterSelect();
 
   // Tab switching
   root.querySelectorAll('.admin-tab').forEach(btn => {
@@ -3246,7 +3283,7 @@ function uploadAdminCSV(event) {
     TRANSPORT_OPTS.filter(t => t.idx > 0).forEach(t => reg(t.label, '', `transport:${t.idx}:price`, `transport:${t.idx}:cost`, `transport:${t.idx}:memo`));
     REGION_OPTS.filter(r => r.idx > 0).forEach(r => reg(r.label, '', `region:${r.idx}:price`, `region:${r.idx}:cost`, `region:${r.idx}:memo`));
 
-    const prices = {}, memos = {};
+    const prices = {}, memos = {}, csvLabels = {};
     let updated = 0, skipped = 0;
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
@@ -3258,46 +3295,173 @@ function uploadAdminCSV(event) {
       const price = parseFloat(cols[idxPrice]);
       const cost  = parseFloat(cols[idxCost]);
       const memo  = (cols[idxMemo] || '').trim();
-      if (!isNaN(price)) prices[entry.pk] = price;
-      if (!isNaN(cost))  prices[entry.ck] = cost;
+      const full = label + (size ? `（${size}）` : '');
+      if (!isNaN(price)) { prices[entry.pk] = price; csvLabels[entry.pk] = full + '｜売価'; }
+      if (!isNaN(cost))  { prices[entry.ck] = cost;  csvLabels[entry.ck] = full + '｜原価'; }
       if (memo) memos[entry.mk] = memo;
       updated++;
     }
 
-    PRICE_OVR = prices;
-    saveOverrides(prices);
-    MEMO_DATA = memos;
-    saveMemos(memos);
-    renderAdmin();
+    // メモは承認不要でそのまま保存
+    MEMO_DATA = { ...MEMO_DATA, ...memos };
+    saveMemos(MEMO_DATA);
     // reset input so same file can be uploaded again
     event.target.value = '';
-    alert(`${updated}件を読み込みました。${skipped > 0 ? `（${skipped}行スキップ）` : ''}\n保存済みです。`);
+
+    // 金額はマネージャー承認後に反映されるため、差分を申請に回す
+    const changes = Object.keys(prices)
+      .map(k => ({ key: k, label: csvLabels[k] || k,
+                   before: (PRICE_OVR[k] !== undefined) ? PRICE_OVR[k] : null,
+                   after: prices[k] }))
+      .filter(c => c.before !== c.after);
+    if (!changes.length) {
+      renderAdmin();
+      alert(`${updated}件を読み込みましたが、金額の変更はありませんでした。${skipped > 0 ? `（${skipped}行スキップ）` : ''}`);
+      return;
+    }
+    submitChangesForApproval(changes, `CSVアップロード（${updated}件${skipped > 0 ? `／${skipped}行スキップ` : ''}）`);
   };
   reader.readAsText(file, 'UTF-8');
 }
 
-function saveAdminPrices() {
-  // タブ分割により他タブの値が消えないよう、既存値とマージ
-  const prices = { ...PRICE_OVR };
-  document.querySelectorAll('#adminContent input[type="number"]').forEach(inp => {
-    const key = inp.dataset.key;
-    if (!key) return; // カスタム行（data-key無し）は各自のoninputで保存済み
-    const v = parseFloat(inp.value);
-    if (!isNaN(v)) prices[key] = v;
+// ============================================================
+// 価格変更の承認フロー
+// 管理画面の保存 = 申請。Slackでマネージャーが承認して初めて全員に反映される。
+// ============================================================
+const LS_REQBY = nsLS('yadokari_requested_by_v1');
+let PENDING_LIST = [];
+
+function myName()      { return localStorage.getItem(LS_REQBY) || ''; }
+function setMyName(v)  { if (v) localStorage.setItem(LS_REQBY, v); }
+const _p2 = n => String(n).padStart(2, '0');
+
+// 描画時点の値（data-orig）と現在の入力値を突き合わせて差分を作る
+function collectAdminPriceChanges() {
+  const changes = [];
+  document.querySelectorAll('#adminContent input[type="number"][data-key]').forEach(inp => {
+    const after = parseFloat(inp.value);
+    if (isNaN(after)) return;
+    const before = parseFloat(inp.dataset.orig);
+    if (!isNaN(before) && before === after) return;
+    changes.push({
+      key:    inp.dataset.key,
+      label:  inp.dataset.label || inp.dataset.key,
+      before: isNaN(before) ? null : before,
+      after,
+    });
   });
-  PRICE_OVR = prices;
-  saveOverrides(prices);
+  return changes;
+}
+
+// メモは承認不要でそのまま保存する
+function saveAdminMemos() {
   const memos = { ...MEMO_DATA };
   document.querySelectorAll('#adminContent input[data-memo-key]').forEach(inp => {
     const key = inp.dataset.memoKey;
     const v = inp.value.trim();
-    if (v) memos[key] = v;
-    else delete memos[key];
+    if (v) memos[key] = v; else delete memos[key];
   });
   MEMO_DATA = memos;
   saveMemos(memos);
-  alert('保存しました。');
+}
+
+async function submitChangesForApproval(changes, note) {
+  if (!changes.length) { alert('金額の変更はありません。'); return; }
+  if (!sb) { alert('クラウドに接続できないため申請できません。ネットワーク接続を確認してください。'); return; }
+
+  const sel = document.getElementById('reqBySel');
+  const who = (sel && sel.value) || myName();
+  if (!who) { alert('画面下の「申請者」を選択してください。'); if (sel) sel.focus(); return; }
+  setMyName(who);
+
+  const preview = changes.slice(0, 10)
+    .map(c => `・${c.label}　${c.before == null ? '（未設定）' : fmt(c.before)} → ${fmt(c.after)}`).join('\n');
+  const more = changes.length > 10 ? `\n…ほか${changes.length - 10}件` : '';
+  if (!confirm(`以下の${changes.length}件をマネージャーに承認申請します。\n承認されるまで価格は変わりません。\n\n${preview}${more}`)) return;
+
+  const btn = document.getElementById('adminSaveBtn');
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('pending_changes')
+    .insert({ ns: NS, requested_by: who, changes, status: 'pending', note: note || null });
+  if (btn) btn.disabled = false;
+  if (error) { alert('申請の送信に失敗しました：' + error.message); return; }
+
+  alert('承認申請を送信しました。\nSlackでマネージャーが承認すると、全員のツールに反映されます。');
+  await refreshPendingList();
+  _adminTab = 'approval';
   renderAdmin();
+}
+
+function submitPriceApproval() {
+  saveAdminMemos();
+  const changes = collectAdminPriceChanges();
+  if (!changes.length) { alert('金額の変更はありません。（メモの変更は保存しました）'); return; }
+  return submitChangesForApproval(changes);
+}
+
+async function refreshPendingList() {
+  if (!sb) return;
+  const { data, error } = await sb.from('pending_changes')
+    .select('*').eq('ns', NS).order('created_at', { ascending: false }).limit(50);
+  if (!error) PENDING_LIST = data || [];
+}
+
+function pendingCount() { return PENDING_LIST.filter(p => p.status === 'pending').length; }
+
+function renderApprovalSection() {
+  const BADGE = {
+    pending:  ['承認待ち', 'pc-pending'],
+    approved: ['承認済み', 'pc-approved'],
+    rejected: ['却下',     'pc-rejected'],
+  };
+  let html = `<div class="admin-section">
+    <h3><span>承認待ち・申請履歴</span></h3>
+    <div class="pc-note">管理画面で金額を変更して申請すると、Slackでマネージャーに承認依頼が届きます。承認されるまで価格は変わりません。</div>`;
+
+  if (!PENDING_LIST.length) {
+    html += `<div class="pc-empty">申請はまだありません。</div>`;
+  } else {
+    html += PENDING_LIST.map(p => {
+      const [txt, cls] = BADGE[p.status] || [p.status, ''];
+      const d = new Date(p.created_at);
+      const when = `${d.getFullYear()}/${_p2(d.getMonth()+1)}/${_p2(d.getDate())} ${_p2(d.getHours())}:${_p2(d.getMinutes())}`;
+      const decided = p.decided_by
+        ? `／${p.status === 'approved' ? '承認' : '却下'}：${escapeHtml(p.decided_by)}`
+        : '';
+      const items = (p.changes || []).map(c =>
+        `<li><span class="pc-lbl">${escapeHtml(c.label || c.key)}</span>`
+        + `<span class="pc-val"><span class="pc-before">${fmt(c.before || 0)}</span> → <strong>${fmt(c.after)}</strong></span></li>`
+      ).join('');
+      return `<div class="pc-card">
+        <div class="pc-head">
+          <span class="pc-badge ${cls}">${txt}</span>
+          <span class="pc-meta">${when}／申請：${escapeHtml(p.requested_by || '—')}${decided}</span>
+        </div>
+        <ul class="pc-list">${items}</ul>
+      </div>`;
+    }).join('');
+  }
+  return html + `</div>`;
+}
+
+function populateRequesterSelect() {
+  const sel = document.getElementById('reqBySel');
+  if (!sel) return;
+  const cur = sel.value || myName();
+  sel.innerHTML = `<option value="">申請者を選択</option>` +
+    STAFF_LIST.map(s => `<option value="${escapeAttr(s)}"${s === cur ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+}
+
+function subscribePendingChanges() {
+  if (!sb) return;
+  sb.channel('yadokari-pending')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_changes' }, async payload => {
+      const row = payload.new || payload.old;
+      if (row && row.ns && row.ns !== NS) return;
+      await refreshPendingList();
+      if (state.mode === 'admin' && !_isTyping()) renderAdmin();
+    })
+    .subscribe();
 }
 
 function downloadAdminCSV() {
@@ -3737,6 +3901,8 @@ async function bootstrap() {
   catch (e) { console.warn('クラウド読込に失敗。ローカルのデータで起動します:', e && e.message); }
   bootApp();
   subscribeRealtime();  // 以降、他メンバーの変更をリアルタイム反映
+  subscribePendingChanges();
+  refreshPendingList();
 }
 function initGate() {
   const gate = document.getElementById('gate');

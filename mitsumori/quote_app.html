@@ -3143,8 +3143,8 @@ function renderAdmin() {
     html += `<div class="admin-section">
       <h3><span>仲介手数料の料率</span></h3>
       <div class="rate-grid">
-        <div class="rate-field"><label>売主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:seller" data-orig="${brokerRate('seller')}" data-label="仲介手数料率｜売主から（％）" value="${brokerRate('seller')}"></div>
-        <div class="rate-field"><label>買主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:buyer" data-orig="${brokerRate('buyer')}" data-label="仲介手数料率｜買主から（％）" value="${brokerRate('buyer')}"></div>
+        <div class="rate-field"><label>売主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:seller" data-orig="${brokerRate('seller')}" data-label="売主から（％）" value="${brokerRate('seller')}"></div>
+        <div class="rate-field"><label>買主から（％）</label><input type="number" step="1" min="0" data-key="brokerRate:buyer" data-orig="${brokerRate('buyer')}" data-label="買主から（％）" value="${brokerRate('buyer')}"></div>
       </div>
       <div class="rate-note">車両売価に対する料率です。買主分は顧客へのご請求に加算され、売主分は社内シミュレーションにのみ計上されます。</div>
     </div>`;
@@ -3295,7 +3295,8 @@ function uploadAdminCSV(event) {
       const price = parseFloat(cols[idxPrice]);
       const cost  = parseFloat(cols[idxCost]);
       const memo  = (cols[idxMemo] || '').trim();
-      const full = label + (size ? `（${size}）` : '');
+      const cat  = (cols[0] || '').trim();
+      const full = (cat ? cat + '｜' : '') + label + (size ? `（${size}）` : '');
       if (!isNaN(price)) { prices[entry.pk] = price; csvLabels[entry.pk] = full + '｜売価'; }
       if (!isNaN(cost))  { prices[entry.ck] = cost;  csvLabels[entry.ck] = full + '｜原価'; }
       if (memo) memos[entry.mk] = memo;
@@ -3343,9 +3344,13 @@ function collectAdminPriceChanges() {
     if (isNaN(after)) return;
     const before = parseFloat(inp.dataset.orig);
     if (!isNaN(before) && before === after) return;
+    // 承認者がSlack上で区別できるよう、セクション見出し（例: ROADIE｜ベースモデル）を前に付ける
+    const sec      = inp.closest('.admin-section');
+    const secTitle = sec ? ((sec.querySelector('h3 span') || {}).textContent || '').trim() : '';
+    const base     = inp.dataset.label || inp.dataset.key;
     changes.push({
       key:    inp.dataset.key,
-      label:  inp.dataset.label || inp.dataset.key,
+      label:  secTitle ? `${secTitle}｜${base}` : base,
       before: isNaN(before) ? null : before,
       after,
     });

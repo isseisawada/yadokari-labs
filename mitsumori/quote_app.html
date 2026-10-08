@@ -739,16 +739,16 @@ const TINYS_MODELS = [
   { id:'t4',  label:'7.2m｜標準｜水回りあり',         shortLabel:'標準｜水回りあり',           price:7990000, cost:5197300, size:'7.2m', ico:'🏠' },
   { id:'t5',  label:'7.2m｜標準｜水回りなし',         shortLabel:'標準｜水回りなし',           price:6990000, cost:4644300, size:'7.2m', ico:'🏠' },
   { id:'t6',  label:'7.2m｜寒冷地｜水回りあり',       shortLabel:'寒冷地｜水回りあり',         price:9050000, cost:5842200, size:'7.2m', ico:'❄️' },
-  { id:'t7',  label:'9m｜標準｜水回りあり',           shortLabel:'標準｜水回りあり',           price:8780000, cost:5651700, size:'9m',   ico:'🏠' },
-  { id:'t8',  label:'9m｜標準｜水回りなし',           shortLabel:'標準｜水回りなし',           price:7780000, cost:5080700, size:'9m',   ico:'🏠' },
-  { id:'t9',  label:'9m｜寒冷地｜水回りあり',         shortLabel:'寒冷地｜水回りあり',         price:9800000, cost:6372700, size:'9m',   ico:'❄️' },
+  { id:'t7',  label:'8.3m｜標準｜水回りあり',         shortLabel:'標準｜水回りあり',           price:8780000, cost:5651700, size:'9m',   ico:'🏠' },
+  { id:'t8',  label:'8.3m｜標準｜水回りなし',         shortLabel:'標準｜水回りなし',           price:7780000, cost:5080700, size:'9m',   ico:'🏠' },
+  { id:'t9',  label:'8.3m｜寒冷地｜水回りあり',       shortLabel:'寒冷地｜水回りあり',         price:9800000, cost:6372700, size:'9m',   ico:'❄️' },
   { id:'t10', label:'実車 7.2m（エアコン込）',         shortLabel:'7.2m（エアコン込）',         price:7742500, cost:5308700, size:'7.2m', ico:'🚘' },
   { id:'t11', label:'実車 9m（ロフト付＋エアコン込）', shortLabel:'9m（ロフト付＋エアコン込）', price:9025000, cost:6240300, size:'9m',   ico:'🚘' },
 ];
 const TINYS_GROUPS = [
   { size:'6m',   models:['t1','t2','t3'] },
   { size:'7.2m', models:['t4','t5','t6'] },
-  { size:'9m',   models:['t7','t8','t9'] },
+  { size:'9m',   label:'8.3m', models:['t7','t8','t9'] },
   { size:'実車',  models:['t10','t11'] },
 ];
 const TINYS_SIZE_OPTS = [
@@ -785,11 +785,11 @@ const TINYS_MISC_OPTS = [
 ];
 
 const ROADIE_MODELS = [
-  { id:'r1', label:'7.2m｜切り妻',                   shortLabel:'切り妻',                      price:10250000, cost:6639940, size:'7.2m', ico:'🏠' },
+  { id:'r1', label:'7.2m｜標準',                     shortLabel:'標準',                        price:10250000, cost:6639940, size:'7.2m', ico:'🏠' },
   { id:'r2', label:'7.2m｜片流れ',                   shortLabel:'片流れ',                      price:10100000, cost:6539940, size:'7.2m', ico:'🏠' },
   { id:'r3', label:'6m',                             shortLabel:'スタンダード',                 price:7150000,  cost:4556440, size:'6m',   ico:'🏠' },
   { id:'r4', label:'6m｜寒冷地',                     shortLabel:'寒冷地',                      price:7300000,  cost:4656440, size:'6m',   ico:'❄️' },
-  { id:'r5', label:'7.2m｜寒冷地｜片流れ',           shortLabel:'寒冷地｜片流れ',              price:10350000, cost:6709940, size:'7.2m', ico:'❄️' },
+  { id:'r5', label:'7.2m｜寒冷地',                   shortLabel:'寒冷地',                      price:10350000, cost:6709940, size:'7.2m', ico:'❄️' },
   { id:'r6', label:'mini',                           shortLabel:'mini',                        price:3700000,  cost:2405440, size:'mini', ico:'🏕️' },
   { id:'r7', label:'実車（ロフト付き・エアコン込）', shortLabel:'実車（ロフト付き・エアコン込）', price:10022500, cost:6999335, size:'7.2m', ico:'🚘' },
 ];
@@ -1939,7 +1939,7 @@ function modelListGrouped(title, sub, groups, modelsArr, s) {
   groups.forEach(grp => {
     if (!grp.models.some(mid => modelMap[mid] && !isHidden(`model:${mid}`))) return; // 空グループは表示しない
     const grpDiv = div('mg-group');
-    const hdr = div('mg-hdr'); hdr.textContent = grp.size;
+    const hdr = div('mg-hdr'); hdr.textContent = grp.label || grp.size;
     grpDiv.appendChild(hdr);
     grp.models.forEach(mid => {
       const m = modelMap[mid]; if (!m || isHidden(`model:${mid}`)) return;

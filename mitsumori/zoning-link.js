@@ -167,12 +167,14 @@
     if (!getLink()) return;
     var actions = document.querySelector('#completionPage .comp-actions');
     if (!actions || document.getElementById('zsSendBtn')) return;
+    // 下のボタン列と同じ左右の余白（画面幅ごとの指定）と角丸に揃える。印刷時も同じく隠れる
     var wrap = document.createElement('div');
-    wrap.setAttribute('style', 'padding:0 0 12px');
+    wrap.className = 'comp-actions';
+    wrap.setAttribute('style', 'border-top:0;padding-bottom:0');
     var btn = document.createElement('button');
     btn.id = 'zsSendBtn';
     btn.textContent = 'この見積もりを Zoning Studio に反映 →';
-    btn.setAttribute('style', 'display:block;width:100%;background:#1a1a1a;color:#fff;border:0;border-radius:999px;padding:14px 18px;font-size:15px;font-weight:700;cursor:pointer');
+    btn.setAttribute('style', 'flex:1;background:#1a1a1a;color:#fff;border:0;border-radius:8px;padding:12px 22px;font-size:0.9rem;font-weight:700;cursor:pointer');
     btn.onclick = function () { sendBack(lastQuote); };
     wrap.appendChild(btn);
     actions.parentNode.insertBefore(wrap, actions);

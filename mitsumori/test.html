@@ -1084,8 +1084,10 @@ let state = {
   other:   { modelQtys:{}, opts:{}, miscOpts:{}, customOpts:[], transportIdx:0, transportCustom:0, transportCustomLabel:'' },
   broker:  { modelQtys:{}, opts:{}, miscOpts:{}, customOpts:[], transportIdx:0, transportCustom:0, transportCustomLabel:'' },
 };
-const hasModel   = (s) => Object.values(s.modelQtys||{}).some(q => q > 0);
-const seriesQty  = (s) => Object.values(s.modelQtys||{}).reduce((a,b) => a+b, 0);
+// Zoning Studio から名前だけで入った車両（追加オプションの vehicle:true）も台数に数える（配送費・諸経費を台数分かけるため）
+const extraVehQty = (s) => (s.customOpts||[]).reduce((a,o) => a + (o.vehicle ? (o.qty||1) : 0), 0);
+const hasModel   = (s) => Object.values(s.modelQtys||{}).some(q => q > 0) || extraVehQty(s) > 0;
+const seriesQty  = (s) => Object.values(s.modelQtys||{}).reduce((a,b) => a+b, 0) + extraVehQty(s);
 
 // ============================================================
 // クラウド同期（Supabase）— 価格/メモ/カスタム項目/担当者/履歴を共有

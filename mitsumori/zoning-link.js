@@ -97,7 +97,7 @@
     });
     // 見積もりに型番が無いトレーラーは「その他車両」の追加オプションに名前と台数だけ入れる (金額は営業が入れる)
     (L.extras || []).forEach(function (x) {
-      state.other.customOpts.push({ name: x.name, qty: x.qty || 1, price: 0 });
+      state.other.customOpts.push({ name: x.name, qty: x.qty || 1, price: 0, vehicle: true });
       first = first || 'other';
     });
     if (first) state.active = first;

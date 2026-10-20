@@ -2124,8 +2124,7 @@ function collectLines() {
     sections.push({ title:'シャーシ', key:'chassis', lines });
   }
 
-  // 車両を選んでいなくても、追加オプション (Zoning Studio から入る型番の無いトレーラーなど) があれば出す
-  if (hasModel(state.other) || (state.other.customOpts || []).some(o => o.name || o.price > 0)) {
+  if (hasModel(state.other)) {
     const s = state.other;
     const tq = seriesQty(s);
     const lines = [];

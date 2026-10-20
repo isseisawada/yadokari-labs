@@ -633,7 +633,7 @@
   <div class="admin-hdr">
     <div>
       <h2>価格管理</h2>
-      <div class="admin-hdr-sub">各項目の売価・原価を編集できます。金額の変更はマネージャーの承認後に全員へ反映されます。</div>
+      <div class="admin-hdr-sub">各項目の売価・原価を編集できます。金額の変更・項目の追加・削除・非表示は、マネージャーの承認後に全員へ反映されます。</div>
     </div>
     <div class="admin-actions">
       <input type="file" id="csvUploadInput" accept=".csv" style="display:none" onchange="uploadAdminCSV(event)">
@@ -1132,8 +1132,9 @@ async function cloudLoadAll() {
   applyOrSeed('prices',       PRICE_OVR,    v => { PRICE_OVR = v;    localStorage.setItem(LS_PRICES, JSON.stringify(v)); });
   applyOrSeed('memos',        MEMO_DATA,    v => { MEMO_DATA = v;    localStorage.setItem(LS_MEMOS,  JSON.stringify(v)); });
   applyOrSeed('staff',        STAFF_LIST,   v => { STAFF_LIST = v;   localStorage.setItem(LS_STAFF,  JSON.stringify(v)); });
-  applyOrSeed('custom_items', CUSTOM_ITEMS, v => { CUSTOM_ITEMS = v; localStorage.setItem(LS_CUSTOM, JSON.stringify(v)); });
-  applyOrSeed('hidden_items', HIDDEN_ITEMS, v => { HIDDEN_ITEMS = v; localStorage.setItem(LS_HIDDEN, JSON.stringify(v)); });
+  applyOrSeed('custom_items', CUSTOM_ITEMS, v => { CUSTOM_ITEMS = v; SAVED_CUSTOM = structuredClone(v); localStorage.setItem(LS_CUSTOM, JSON.stringify(v)); });
+  applyOrSeed('hidden_items', HIDDEN_ITEMS, v => { HIDDEN_ITEMS = v; SAVED_HIDDEN = structuredClone(v); localStorage.setItem(LS_HIDDEN, JSON.stringify(v)); });
+  applyOrSeed('item_applied', ITEM_APPLIED, v => { ITEM_APPLIED = v; });
 
   const { data: qs, error: e2 } = await sb.from('quotes').select('data,created_at').eq('ns', NS).order('created_at', { ascending: false });
   if (e2) throw e2;
@@ -1178,8 +1179,20 @@ function applyConfigChange(key, value) {
   if (key === 'prices')       { if (same(PRICE_OVR)) return; PRICE_OVR = value; localStorage.setItem(LS_PRICES, JSON.stringify(value)); }
   else if (key === 'memos')   { if (same(MEMO_DATA)) return; MEMO_DATA = value; localStorage.setItem(LS_MEMOS, JSON.stringify(value)); }
   else if (key === 'staff')   { if (same(STAFF_LIST)) return; STAFF_LIST = value; localStorage.setItem(LS_STAFF, JSON.stringify(value)); }
-  else if (key === 'custom_items') { if (same(CUSTOM_ITEMS)) return; CUSTOM_ITEMS = value; localStorage.setItem(LS_CUSTOM, JSON.stringify(value)); reapplyCustomItems(); }
-  else if (key === 'hidden_items') { if (same(HIDDEN_ITEMS)) return; HIDDEN_ITEMS = value; localStorage.setItem(LS_HIDDEN, JSON.stringify(value)); }
+  else if (key === 'item_applied') { ITEM_APPLIED = value; if (state.mode === 'admin' && _adminTab === 'approval') rerenderCurrentIfIdle(); return; }
+  else if (key === 'custom_items' || key === 'hidden_items') {
+    // 申請前の下書きがある端末は下書きを残し、確定値だけ更新する
+    const keepDraft = hasItemDrafts();
+    if (key === 'custom_items') {
+      SAVED_CUSTOM = structuredClone(value);
+      if (keepDraft || same(CUSTOM_ITEMS)) return;
+      CUSTOM_ITEMS = value; localStorage.setItem(LS_CUSTOM, JSON.stringify(value)); reapplyCustomItems();
+    } else {
+      SAVED_HIDDEN = structuredClone(value);
+      if (keepDraft || same(HIDDEN_ITEMS)) return;
+      HIDDEN_ITEMS = value; localStorage.setItem(LS_HIDDEN, JSON.stringify(value));
+    }
+  }
   else return;
   rerenderCurrentIfIdle();
 }
@@ -1275,7 +1288,10 @@ function bmCost(o)    { return ovr(`brokerMisc:${o.id}:cost`,  o.cost || 0); }
 const LS_CUSTOM = nsLS('yadokari_custom_items_v1');
 function loadCustom() { try { return JSON.parse(localStorage.getItem(LS_CUSTOM) || '{}') || {}; } catch(e){ return {}; } }
 let CUSTOM_ITEMS = loadCustom();
-function saveCustom() { try { localStorage.setItem(LS_CUSTOM, JSON.stringify(CUSTOM_ITEMS)); } catch(e){} cloudSetConfig('custom_items', CUSTOM_ITEMS); }
+// 追加・編集・削除・非表示は承認制：画面上の変更はこの端末だけの「下書き」で、クラウドには申請→承認後に反映する。
+// SAVED_* はクラウド上の確定値（承認済みの状態）。
+let SAVED_CUSTOM = structuredClone(CUSTOM_ITEMS);
+function saveCustom() { try { localStorage.setItem(LS_CUSTOM, JSON.stringify(CUSTOM_ITEMS)); } catch(e){} }
 let _customSeq = 1;
 
 // ---- 項目の非表示（削除）機能 ----
@@ -1284,9 +1300,9 @@ let _customSeq = 1;
 const LS_HIDDEN = nsLS('yadokari_hidden_items_v1');
 function loadHidden() { try { return JSON.parse(localStorage.getItem(LS_HIDDEN) || '{}') || {}; } catch(e){ return {}; } }
 let HIDDEN_ITEMS = loadHidden();
+let SAVED_HIDDEN = structuredClone(HIDDEN_ITEMS);
 function saveHidden() {
   try { localStorage.setItem(LS_HIDDEN, JSON.stringify(HIDDEN_ITEMS)); } catch(e){}
-  cloudSetConfig('hidden_items', HIDDEN_ITEMS);
 }
 function isHidden(key) { return !!HIDDEN_ITEMS[key]; }
 function hideItem(key, label) {
@@ -1373,7 +1389,7 @@ function addCustomRow(secId) {
 }
 function deleteCustomRow(secId, key) {
   const def = ADMIN_SECTIONS[secId]; if (!def) return;
-  if (!confirm('この行を削除しますか？')) return;
+  if (!confirm('この行を削除しますか？（申請してマネージャーが承認すると反映されます）')) return;
   CUSTOM_ITEMS[secId] = (CUSTOM_ITEMS[secId]||[]).filter(ci => String(customItemKey(ci)) !== String(key));
   const i = def.arr.findIndex(o => String(customItemKey(o)) === String(key) && o._custom);
   if (i >= 0) def.arr.splice(i, 1);
@@ -1393,7 +1409,13 @@ function updateCustomField(secId, key, field, value) {
   const def = ADMIN_SECTIONS[secId]; if (!def) return;
   const ci = (CUSTOM_ITEMS[secId]||[]).find(c => String(customItemKey(c)) === String(key));
   const item = def.arr.find(o => String(customItemKey(o)) === String(key) && o._custom);
-  if (field === 'memo') { if (ci) ci.memo = value; saveCustom(); return; }
+  if (field === 'memo') {
+    // メモは承認不要：確定値側にも書いてそのままクラウドへ保存
+    if (ci) ci.memo = value;
+    const saved = (SAVED_CUSTOM[secId]||[]).find(c => String(customItemKey(c)) === String(key));
+    if (saved) { saved.memo = value; cloudSetConfig('custom_items', SAVED_CUSTOM); }
+    saveCustom(); return;
+  }
   const num = parseFloat(value) || 0;
   if (ci) ci[field] = num;
   if (item) {
@@ -2863,6 +2885,11 @@ function update() {
 // Mode switching (create / admin / history)
 // ============================================================
 function switchMode(m) {
+  // 申請していない項目の追加・削除を残したまま管理画面を離れると、作成画面で未承認の項目が使えてしまうため破棄する
+  if (state.mode === 'admin' && m !== 'admin' && hasItemDrafts()) {
+    if (!confirm('申請していない項目の追加・削除・非表示があります。破棄して移動しますか？')) return;
+    discardItemDrafts();
+  }
   state.mode = m;
   document.body.dataset.mode = m;
   document.querySelectorAll('[data-mode-btn]').forEach(btn => {
@@ -2977,7 +3004,7 @@ const ADMIN_TABS = [
   { id:'broker',  label:'中古仲介車両' },
   { id:'chassis', label:'シャーシ' },
   { id:'other',   label:'その他車両' },
-  { id:'approval', label:'承認待ち' },
+  { id:'approval', label:'承認・変更ログ' },
 ];
 
 function renderAdmin() {
@@ -2989,7 +3016,8 @@ function renderAdmin() {
     }).join('')
   }</nav>`;
 
-  const tableStart = (title, hasSize) => `
+  let lastTitle = '';
+  const tableStart = (title, hasSize) => (lastTitle = title, `
     <div class="admin-section">
       <h3><span>${title}</span><span class="scroll-hint">横にスクロール →</span></h3>
       <div class="admin-scroll">
@@ -3001,9 +3029,9 @@ function renderAdmin() {
           <th>原価</th>
           <th>利益率</th>
           <th>メモ</th>
-        </tr></thead><tbody>`;
-  // 末尾にカスタム行＋「行を追加」ボタンを付けてセクションを閉じる
-  const tableEndAdd = (secId) => customRows(secId) + `</tbody></table></div>` + addRowBtn(secId) + `</div>`;
+        </tr></thead><tbody>`);
+  // 末尾にカスタム行＋「行を追加」ボタンを付けてセクションを閉じる（見出しは申請の項目名に使う）
+  const tableEndAdd = (secId) => (SEC_TITLES[secId] = lastTitle, customRows(secId) + `</tbody></table></div>` + addRowBtn(secId) + `</div>`);
 
   if (tab === 'common') {
     html += renderStaffSection();
@@ -3396,20 +3424,109 @@ async function submitChangesForApproval(changes, note) {
   await refreshPendingList();
   _adminTab = 'approval';
   renderAdmin();
+  return true;
 }
 
-function submitPriceApproval() {
+async function submitPriceApproval() {
   saveAdminMemos();
-  const changes = collectAdminPriceChanges();
-  if (!changes.length) { alert('金額の変更はありません。（メモの変更は保存しました）'); return; }
-  return submitChangesForApproval(changes);
+  const changes = collectAdminPriceChanges().concat(itemDraftChanges());
+  if (!changes.length) { alert('変更はありません。（メモの変更は保存しました）'); return; }
+  // 申請したら下書きは確定値に戻す（承認されると全員に反映される）
+  if (await submitChangesForApproval(changes)) discardItemDrafts();
+}
+
+// ---- 項目の追加・編集・削除・非表示の申請 ----
+// 変更1件ごとに、Slack表示用の key/label/before/after と、承認後に適用する op を持たせる。
+// key は価格（prices）と重ならない "item:" / "hide:" で始める。
+const SEC_TITLES = {};
+let ITEM_APPLIED = {};   // 申請ID → 項目変更をツールに反映した日時（クラウドの shared_config に保存）
+
+function hasItemDrafts() { return itemDraftChanges().length > 0; }
+
+function discardItemDrafts() {
+  CUSTOM_ITEMS = structuredClone(SAVED_CUSTOM);
+  HIDDEN_ITEMS = structuredClone(SAVED_HIDDEN);
+  saveCustom(); saveHidden();
+  reapplyCustomItems();
+  rerenderCurrentIfIdle();
+}
+
+function itemDraftChanges() {
+  const out = [];
+  const val = (secId, ci) => ({ name: ci.name || '', price: ci.price || 0, cost: ci.cost || 0 });
+  new Set([...Object.keys(CUSTOM_ITEMS), ...Object.keys(SAVED_CUSTOM)]).forEach(secId => {
+    const title = SEC_TITLES[secId] || secId;
+    const cur  = new Map((CUSTOM_ITEMS[secId] || []).map(ci => [String(customItemKey(ci)), ci]));
+    const base = new Map((SAVED_CUSTOM[secId] || []).map(ci => [String(customItemKey(ci)), ci]));
+    cur.forEach((ci, k) => {
+      const v = val(secId, ci);
+      const b = base.get(k);
+      if (!b) {
+        out.push({ key: `item:${secId}:${k}`, label: `【追加】${title}｜${v.name || '（名前なし）'}｜売価（原価 ${fmt(v.cost)}）`,
+                   before: null, after: v.price, op: { t: 'add', sec: secId, ci: { ...ci } } });
+        return;
+      }
+      const o = val(secId, b);
+      if (o.name === v.name && o.price === v.price && o.cost === v.cost) return;
+      const nm = o.name === v.name ? v.name : `${o.name} → ${v.name}`;
+      const cs = o.cost === v.cost ? '' : `（原価 ${fmt(o.cost)} → ${fmt(v.cost)}）`;
+      out.push({ key: `item:${secId}:${k}`, label: `【変更】${title}｜${nm}｜売価${cs}`,
+                 before: o.price, after: v.price, op: { t: 'edit', sec: secId, key: k, v } });
+    });
+    base.forEach((b, k) => {
+      if (cur.has(k)) return;
+      out.push({ key: `item:${secId}:${k}`, label: `【削除】${title}｜${b.name || '（名前なし）'}｜売価`,
+                 before: b.price || 0, after: 0, op: { t: 'del', sec: secId, key: k } });
+    });
+  });
+  new Set([...Object.keys(HIDDEN_ITEMS), ...Object.keys(SAVED_HIDDEN)]).forEach(k => {
+    const on = !!HIDDEN_ITEMS[k], was = !!SAVED_HIDDEN[k];
+    if (on === was) return;
+    const label = HIDDEN_ITEMS[k] || SAVED_HIDDEN[k] || k;
+    out.push({ key: `hide:${k}`, label: `${on ? '【非表示】' : '【再表示】'}${label}`,
+               before: null, after: 0, op: { t: on ? 'hide' : 'unhide', key: k, label } });
+  });
+  return out;
+}
+
+// 承認済みでまだ反映していない申請の項目変更を、確定値に適用してクラウドへ保存する。
+// どの端末が適用しても同じ結果になる。反映日時を ITEM_APPLIED に残す。
+function applyApprovedItemOps() {
+  const todo = PENDING_LIST
+    .filter(p => p.status === 'approved' && !ITEM_APPLIED[p.id] && (p.changes || []).some(c => c.op))
+    .sort((a, b) => String(a.decided_at).localeCompare(String(b.decided_at)));
+  if (!todo.length) return;
+  const keepDraft = hasItemDrafts();
+  const custom = structuredClone(SAVED_CUSTOM), hidden = structuredClone(SAVED_HIDDEN);
+  const now = new Date().toISOString();
+  todo.forEach(p => {
+    p.changes.forEach(({ op }) => {
+      if (!op) return;
+      const list = op.sec ? (custom[op.sec] = custom[op.sec] || []) : null;
+      const idx = list && list.findIndex(ci => String(customItemKey(ci)) === String(op.key ?? customItemKey(op.ci)));
+      if (op.t === 'add' && idx < 0) list.push(op.ci);
+      else if (op.t === 'edit' && idx >= 0) Object.assign(list[idx], op.v);
+      else if (op.t === 'del' && idx >= 0) list.splice(idx, 1);
+      else if (op.t === 'hide') hidden[op.key] = op.label;
+      else if (op.t === 'unhide') delete hidden[op.key];
+    });
+    ITEM_APPLIED[p.id] = now;
+  });
+  SAVED_CUSTOM = custom; SAVED_HIDDEN = hidden;
+  cloudSetConfig('custom_items', custom);
+  cloudSetConfig('hidden_items', hidden);
+  cloudSetConfig('item_applied', ITEM_APPLIED);
+  if (!keepDraft) discardItemDrafts();   // 下書きが無ければ画面にもすぐ反映
 }
 
 async function refreshPendingList() {
   if (!sb) return;
+  // 承認済みの申請は変更ログとして全件残す（表示もここから）
   const { data, error } = await sb.from('pending_changes')
-    .select('*').eq('ns', NS).order('created_at', { ascending: false }).limit(50);
-  if (!error) PENDING_LIST = data || [];
+    .select('*').eq('ns', NS).order('created_at', { ascending: false }).limit(1000);
+  if (error) return;
+  PENDING_LIST = data || [];
+  applyApprovedItemOps();
 }
 
 function pendingCount() { return PENDING_LIST.filter(p => p.status === 'pending').length; }
@@ -3421,19 +3538,26 @@ function renderApprovalSection() {
     rejected: ['却下',     'pc-rejected'],
   };
   let html = `<div class="admin-section">
-    <h3><span>承認待ち・申請履歴</span></h3>
-    <div class="pc-note">管理画面で金額を変更して申請すると、Slackでマネージャーに承認依頼が届きます。承認されるまで価格は変わりません。</div>`;
+    <h3><span>承認待ち・変更ログ</span></h3>
+    <div class="pc-note">管理画面で金額の変更・項目の追加・削除・非表示をして申請すると、Slackでマネージャーに承認依頼が届きます。承認されるまでツールには反映されません。</div>`;
+  const dt = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${d.getFullYear()}/${_p2(d.getMonth()+1)}/${_p2(d.getDate())} ${_p2(d.getHours())}:${_p2(d.getMinutes())}`;
+  };
+  // 金額の変更は承認と同時にクラウド側で反映される。項目の変更は承認後にツールが反映した日時を記録している。
+  const appliedAt = (p) => (p.changes || []).some(c => c.op) ? ITEM_APPLIED[p.id] : p.decided_at;
 
   if (!PENDING_LIST.length) {
     html += `<div class="pc-empty">申請はまだありません。</div>`;
   } else {
     html += PENDING_LIST.map(p => {
       const [txt, cls] = BADGE[p.status] || [p.status, ''];
-      const d = new Date(p.created_at);
-      const when = `${d.getFullYear()}/${_p2(d.getMonth()+1)}/${_p2(d.getDate())} ${_p2(d.getHours())}:${_p2(d.getMinutes())}`;
       const decided = p.decided_by
-        ? `／${p.status === 'approved' ? '承認' : '却下'}：${escapeHtml(p.decided_by)}`
+        ? `／${p.status === 'approved' ? '承認' : '却下'}：${escapeHtml(p.decided_by)} ${dt(p.decided_at)}`
         : '';
+      const applied = p.status !== 'approved' ? ''
+        : `／反映：${appliedAt(p) ? dt(appliedAt(p)) : '反映待ち（次に誰かがツールを開いたときに反映）'}`;
       const items = (p.changes || []).map(c =>
         `<li><span class="pc-lbl">${escapeHtml(c.label || c.key)}</span>`
         + `<span class="pc-val"><span class="pc-before">${fmt(c.before || 0)}</span> → <strong>${fmt(c.after)}</strong></span></li>`
@@ -3441,7 +3565,7 @@ function renderApprovalSection() {
       return `<div class="pc-card">
         <div class="pc-head">
           <span class="pc-badge ${cls}">${txt}</span>
-          <span class="pc-meta">${when}／申請：${escapeHtml(p.requested_by || '—')}${decided}</span>
+          <span class="pc-meta">申請：${escapeHtml(p.requested_by || '—')} ${dt(p.created_at)}${decided}${applied}</span>
         </div>
         <ul class="pc-list">${items}</ul>
       </div>`;

@@ -8,6 +8,8 @@
   <title>YADOKARI トレーラーハウス 見積もり</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Zoning Studio 連携 (案件から開いた時の入力・確定後の反映ボタン) -->
+  <script src="zoning-link.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
@@ -2120,7 +2122,8 @@ function collectLines() {
     sections.push({ title:'シャーシ', key:'chassis', lines });
   }
 
-  if (hasModel(state.other)) {
+  // 車両を選んでいなくても、追加オプション (Zoning Studio から入る型番の無いトレーラーなど) があれば出す
+  if (hasModel(state.other) || (state.other.customOpts || []).some(o => o.name || o.price > 0)) {
     const s = state.other;
     const tq = seriesQty(s);
     const lines = [];
@@ -4025,6 +4028,7 @@ function bootApp() {
   if (IS_TEST) document.body.classList.add('is-test');
   applyCustomItems();
   update();
+  if (typeof window.zsAfterBoot === 'function') window.zsAfterBoot();
 }
 async function bootstrap() {
   try { await cloudLoadAll(); }

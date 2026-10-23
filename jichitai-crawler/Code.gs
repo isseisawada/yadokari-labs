@@ -121,6 +121,10 @@ function crawlOne_(t, prev, keys) {
     r = { status: '未発見（要確認）', url: '', kind: '', updated: '', title: '', summary: '', tendency: '', aobon: '', rev2026: '', dept: '', contact: '',
       memo: `他の自治体のページを根拠にしていたため不採用（${r.url || 'URLなし'}）` };
   }
+  // コンテナだけのページを「掲載あり」にしてくることがあるので、本文に語が無ければ「掲載なし」に直す
+  if (r.status === '掲載あり' && chosen && !chosen.pdf && !/トレーラー|車両/.test(chosen.text)) {
+    r = Object.assign({}, r, { status: '掲載なし（確認済）', memo: 'ページにトレーラーハウス・車両の語が無いため掲載なしに直した。' + r.memo });
+  }
   return base.concat([r.status, r.url, r.kind, r.updated, r.title, r.summary, r.tendency, r.aobon, r.rev2026, r.dept,
     r.contact, r.url && chosen ? chosen.hash : '', judgeChange_(prev, r), (r.memo ? r.memo.replace(/。+$/, '') + '。' : '') + '自動取得']);
 }

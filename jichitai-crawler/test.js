@@ -98,4 +98,15 @@ assert.strictEqual(r4.length, 19);
 assert.deepStrictEqual([r4[5], r4[6], r4[10], r4[16]], ['未発見（要確認）', '', '', '']);
 assert.ok(r4[18].startsWith('他の自治体のページを根拠にしていたため不採用'));
 
+// コンテナだけのページで「掲載あり」と返ってきたら「掲載なし（確認済）」に直す
+const koga = { code: '082040', pref: '茨城県', name: '古河市' };
+ctx.fetchPage_ = url => ({ url, ok: true, hash: 'k1', text: 'コンテナを利用した倉庫について｜古河市' });
+ctx.ask_ = () => ({ status: '掲載あり', url: 'https://www.city.ibaraki-koga.lg.jp/a.html', kind: 'HTML', updated: '', title: '', summary: 'コンテナは建築物',
+  tendency: '基準総則どおり', aobon: 'なし', rev2026: 'なし', dept: '', contact: '', memo: 'コンテナの扱いあり' });
+ctx.search_ = () => ['https://www.city.ibaraki-koga.lg.jp/a.html'];
+vm.runInContext('fetchPage_ = this.fetchPage_; search_ = this.search_; ask_ = this.ask_;', ctx);
+const p5 = Array(19).fill(''); p5[5] = '掲載なし（確認済）'; p5[13] = 'なし';
+const r5 = f.crawlOne_(koga, p5, { getProperty: () => '' });
+assert.deepStrictEqual([r5[5], r5[17]], ['掲載なし（確認済）', '変化なし']);
+
 console.log('ok');

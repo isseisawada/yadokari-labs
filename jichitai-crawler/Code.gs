@@ -73,7 +73,8 @@ function tick() {
       const row = crawlOne_(t, before, keys);
       log.appendRow(row);
       prev[t.code] = row;
-      if (!/^取得/.test(row[5])) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
+      const keep = /^取得/.test(row[5]) || (row[5] === '未発見（要確認）' && before && isFound_(before[5]));
+      if (!keep) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
       if (row[17] === '変更') slack_(keys, `【公式情報の変化】${t.pref}${place_(t)}：${before ? before[5] : 'なし'} → ${row[5]}\n${row[10]}\n${row[6]}`);
       cursor++;
       p.setProperty('CURSOR', String(cursor));
@@ -113,16 +114,22 @@ function crawlOne_(t, prev, keys) {
     return base.concat([status, '', '', '', '', '', '', '', '', '', '', '', prev ? '変化なし' : '新規', memo + '（自動）']);
   }
 
-  const r = ask_(t, ok, keys.getProperty('ANTHROPIC_API_KEY'));
+  let r = ask_(t, ok, keys.getProperty('ANTHROPIC_API_KEY'));
   const chosen = ok.find(x => x.url === r.url);
+  // AIが他の自治体のページを根拠にしたら採らない
+  if (r.status !== '未発見（要確認）' && !(chosen && isOwn_(t, chosen))) {
+    r = { status: '未発見（要確認）', url: '', kind: '', updated: '', title: '', summary: '', tendency: '', aobon: '', rev2026: '', dept: '', contact: '',
+      memo: `他の自治体のページを根拠にしていたため不採用（${r.url || 'URLなし'}）` };
+  }
   return base.concat([r.status, r.url, r.kind, r.updated, r.title, r.summary, r.tendency, r.aobon, r.rev2026, r.dept,
-    r.contact, chosen ? chosen.hash : '', judgeChange_(prev, r), (r.memo ? r.memo + '。' : '') + '自動取得']);
+    r.contact, r.url && chosen ? chosen.hash : '', judgeChange_(prev, r), (r.memo ? r.memo.replace(/。+$/, '') + '。' : '') + '自動取得']);
 }
 
 // ---- 判定（テストあり） ----
 
 function targets_(rows, month, prefixes) {
-  const quarterly = ['01', '04', '07', '10'].includes(month.slice(5));
+  // 試運転（県を絞ったとき）は町村を含めない
+  const quarterly = !prefixes.length && ['01', '04', '07', '10'].includes(month.slice(5));
   return rows.map((r, i) => ({ row: i + 2, code: String(r[0]).padStart(6, '0'), pref: r[1], name: r[2], kind: r[3], madoguchi: String(r[4]) }))
     .filter(t => !prefixes.length || prefixes.includes(t.code.slice(0, 2)))
     .filter(t => quarterly || isMonthly_(t));
@@ -141,7 +148,21 @@ function lastRows_(values) {
 
 function judgeChange_(prev, r) {
   if (!prev) return '新規';
-  return prev[5] !== r.status || (r.tendency !== undefined && prev[11] !== r.tendency) || (r.rev2026 !== undefined && prev[13] !== r.rev2026) ? '変更' : '変化なし';
+  // 前回は見つかっていたのに今回見つからないのは、サイトの障害や検索の揺れが多いので変化扱いしない
+  if (r.status === '未発見（要確認）' && isFound_(prev[5])) return '変化なし';
+  const differs = (a, b) => a !== '' && b !== '' && a !== b; // AIが空欄で返した項目は比べない
+  return prev[5] !== r.status || differs(prev[11], r.tendency) || differs(prev[13], r.rev2026) ? '変更' : '変化なし';
+}
+
+function isFound_(status) {
+  return /^掲載/.test(status);
+}
+
+// 根拠のページがその自治体のものか：県は県（都）のサイト、市区町村はページに自治体名がある
+function isOwn_(t, page) {
+  const host = (page.url.match(/^https?:\/\/([^/:]+)/i) || [])[1] || '';
+  if (!place_(t)) return /(^|\.)(pref\.|metro\.tokyo)/.test(host);
+  return page.pdf ? true : String(page.text).includes(t.name);
 }
 
 function place_(t) {
@@ -151,6 +172,12 @@ function place_(t) {
 function isOfficial_(url) {
   const host = (String(url).match(/^https?:\/\/([^/:]+)/i) || [])[1] || '';
   return /\.lg\.jp$/.test(host) || /^(www\.)?(pref|city|town|vill)\.[a-z0-9.-]+\.jp$/.test(host);
+}
+
+// 検索結果がその自治体についてのものか（他の自治体のページを除く）
+function isAbout_(t, x) {
+  if (!place_(t)) return /^https?:\/\/([^/]*\.)?(pref\.|metro\.tokyo)/i.test(x.url) && String(x.title + x.description).includes(t.pref);
+  return String(x.title + x.description).includes(t.name);
 }
 
 function robotsAllows_(txt, path) {
@@ -203,7 +230,7 @@ function search_(t, key) {
     });
     if (res.getResponseCode() !== 200) throw new Error(`検索API ${res.getResponseCode()}: ${res.getContentText().slice(0, 200)}`);
     ((JSON.parse(res.getContentText()).web || {}).results || []).forEach(x => {
-      if (isOfficial_(x.url) && !urls.includes(x.url)) urls.push(x.url);
+      if (isOfficial_(x.url) && isAbout_(t, x) && !urls.includes(x.url)) urls.push(x.url);
     });
   });
   return urls;
@@ -266,7 +293,8 @@ const SYSTEM = `あなたは日本の自治体の建築行政を調べる担当�
 - aobon: 「建築確認のための基準総則・集団規定の適用事例」（青本）への言及があれば「あり」。
 - rev2026: 青本の2026年度版（改訂版）への言及があれば「あり」。
 - summary: 判断基準の要旨を1〜2文で。
-- updated: ページに書かれた更新日・発出日。`;
+- updated: ページに書かれた更新日・発出日。YYYY/MM/DD の形で。
+- サイトの障害表示・メンテナンス表示しか無いときは「未発見（要確認）」にし、memoにそう書く。`;
 
 const SCHEMA = {
   type: 'object', additionalProperties: false,

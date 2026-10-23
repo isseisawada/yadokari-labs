@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -108,5 +108,18 @@ vm.runInContext('fetchPage_ = this.fetchPage_; search_ = this.search_; ask_ = th
 const p5 = Array(19).fill(''); p5[5] = '掲載なし（確認済）'; p5[13] = 'なし';
 const r5 = f.crawlOne_(koga, p5, { getProperty: () => '' });
 assert.deepStrictEqual([r5[5], r5[17]], ['掲載なし（確認済）', '変化なし']);
+
+// 「掲載あり」はAIの判定だけでは外さない
+assert.ok(f.keepMaster_('掲載あり', '掲載なし（確認済）'));
+assert.ok(f.keepMaster_('掲載なし（確認済）', '未発見（要確認）'));
+assert.ok(f.keepMaster_('', '取得エラー'));
+assert.ok(!f.keepMaster_('掲載なし（確認済）', '掲載あり'));
+assert.ok(!f.keepMaster_('未発見（要確認）', '掲載なし（確認済）'));
+// 「公用車両」のような別の意味の「車両」では掲載ありにしない
+ctx.fetchPage_ = url => ({ url, ok: true, hash: 'k2', text: 'コンテナ倉庫｜古河市 公用車両の売却' });
+vm.runInContext('fetchPage_ = this.fetchPage_;', ctx);
+assert.strictEqual(f.crawlOne_(koga, p5, { getProperty: () => '' })[5], '掲載なし（確認済）');
+const r6 = f.crawlOne_(Object.assign({ current: '掲載あり' }, koga), null, { getProperty: () => '' });
+assert.ok(r6[18].startsWith('要確認'));
 
 console.log('ok');

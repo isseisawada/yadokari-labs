@@ -63,7 +63,7 @@ function tick() {
   const master = ss.getSheetByName(SHEET_MASTER);
   const log = ss.getSheetByName(SHEET_LOG);
   const prefixes = (p.getProperty('PREFIXES') || '').split(',').filter(Boolean);
-  const targets = targets_(master.getRange(2, 1, master.getLastRow() - 1, 5).getValues(), month_(), prefixes);
+  const targets = targets_(master.getRange(2, 1, master.getLastRow() - 1, 6).getValues(), month_(), prefixes);
   const prev = lastRows_(log.getRange(2, 1, Math.max(log.getLastRow() - 1, 1), 19).getValues());
 
   try {
@@ -73,9 +73,8 @@ function tick() {
       const row = crawlOne_(t, before, keys);
       log.appendRow(row);
       prev[t.code] = row;
-      const keep = /^取得/.test(row[5]) || (row[5] === '未発見（要確認）' && before && isFound_(before[5]));
-      if (!keep) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
-      if (row[17] === '変更') slack_(keys, `【公式情報の変化】${t.pref}${place_(t)}：${before ? before[5] : 'なし'} → ${row[5]}\n${row[10]}\n${row[6]}`);
+      if (!keepMaster_(t.current, row[5])) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
+      if (row[17] === '変更') slack_(keys, `【公式情報の変化${keepMaster_(t.current, row[5]) && t.current === '掲載あり' ? '・要確認' : ''}】${t.pref}${place_(t)}：${before ? before[5] : 'なし'} → ${row[5]}\n${row[10]}\n${row[6]}`);
       cursor++;
       p.setProperty('CURSOR', String(cursor));
     }
@@ -122,8 +121,11 @@ function crawlOne_(t, prev, keys) {
       memo: `他の自治体のページを根拠にしていたため不採用（${r.url || 'URLなし'}）` };
   }
   // コンテナだけのページを「掲載あり」にしてくることがあるので、本文に語が無ければ「掲載なし」に直す
-  if (r.status === '掲載あり' && chosen && !chosen.pdf && !/トレーラー|車両/.test(chosen.text)) {
-    r = Object.assign({}, r, { status: '掲載なし（確認済）', memo: 'ページにトレーラーハウス・車両の語が無いため掲載なしに直した。' + r.memo });
+  if (r.status === '掲載あり' && chosen && !chosen.pdf && !/トレーラー|車両を利用/.test(chosen.text)) {
+    r = Object.assign({}, r, { status: '掲載なし（確認済）', memo: 'ページにトレーラーハウス・車両を利用した工作物の語が無いため掲載なしに直した。' + r.memo });
+  }
+  if (t.current === '掲載あり' && r.status !== '掲載あり') {
+    r = Object.assign({}, r, { memo: '要確認：マスタは掲載ありのまま。人が確かめて直す。' + r.memo });
   }
   return base.concat([r.status, r.url, r.kind, r.updated, r.title, r.summary, r.tendency, r.aobon, r.rev2026, r.dept,
     r.contact, r.url && chosen ? chosen.hash : '', judgeChange_(prev, r), (r.memo ? r.memo.replace(/。+$/, '') + '。' : '') + '自動取得']);
@@ -134,7 +136,7 @@ function crawlOne_(t, prev, keys) {
 function targets_(rows, month, prefixes) {
   // 試運転（県を絞ったとき）は町村を含めない
   const quarterly = !prefixes.length && ['01', '04', '07', '10'].includes(month.slice(5));
-  return rows.map((r, i) => ({ row: i + 2, code: String(r[0]).padStart(6, '0'), pref: r[1], name: r[2], kind: r[3], madoguchi: String(r[4]) }))
+  return rows.map((r, i) => ({ row: i + 2, code: String(r[0]).padStart(6, '0'), pref: r[1], name: r[2], kind: r[3], madoguchi: String(r[4]), current: String(r[5] || '') }))
     .filter(t => !prefixes.length || prefixes.includes(t.code.slice(0, 2)))
     .filter(t => quarterly || isMonthly_(t));
 }
@@ -156,6 +158,11 @@ function judgeChange_(prev, r) {
   if (r.status === '未発見（要確認）' && isFound_(prev[5])) return '変化なし';
   const differs = (a, b) => a !== '' && b !== '' && a !== b; // AIが空欄で返した項目は比べない
   return prev[5] !== r.status || differs(prev[11], r.tendency) || differs(prev[13], r.rev2026) ? '変更' : '変化なし';
+}
+
+// マスタを書き換えないとき：取得できなかった／前は見つかっていたのに見つからない／「掲載あり」がAIの判定だけで外れる
+function keepMaster_(current, status) {
+  return /^取得/.test(status) || (status === '未発見（要確認）' && isFound_(current)) || (current === '掲載あり' && status !== '掲載あり');
 }
 
 function isFound_(status) {

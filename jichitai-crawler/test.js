@@ -34,6 +34,7 @@ const rows = [['080004', '茨城県', '（県）', '都道府県', '県'], ['082
 assert.deepStrictEqual([...f.targets_(rows, '2026-11', [])].map(t => t.code), ['080004', '082015', '112160', '131016']);
 assert.strictEqual(f.targets_(rows, '2027-01', []).length, 5);
 assert.strictEqual(f.targets_(rows, '2026-10', ['08']).length, 2); // 試運転は四半期の月でも町村を含めない
+assert.strictEqual(f.targets_(rows, '2026-11', [], true).length, 5); // 「全国（町村も）」は月に関係なく全部
 assert.deepStrictEqual([...f.targets_(rows, '2026-11', ['11'])].map(t => t.row), [5]);
 
 // 変化の判定

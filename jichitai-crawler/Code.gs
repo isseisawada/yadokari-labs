@@ -17,6 +17,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('自動取得')
     .addItem('キーを登録', 'saveKeys')
     .addItem('関東で試運転', 'pilotKanto')
+    .addItem('全国（町村も）を今すぐ調べる', 'runAllNow')
     .addItem('毎月の自動実行を開始', 'setup')
     .addToUi();
 }
@@ -33,7 +34,7 @@ function saveKeys() {
   ui.alert('登録しました');
 }
 
-// 30分ごとに tick を動かす。月が変わると自動で新しい回を始める
+// 30分ごとに tick を動かす。毎月24日になると自動で新しい回を始める
 function setup() {
   ScriptApp.getProjectTriggers().forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('tick').timeBased().everyMinutes(30).create();
@@ -41,8 +42,16 @@ function setup() {
 }
 
 function pilotKanto() {
-  const p = PropertiesService.getScriptProperties();
-  p.setProperties({ RUN_MONTH: month_(), CURSOR: '0', PREFIXES: KANTO.join(',') });
+  startRun_({ PREFIXES: KANTO.join(','), ALL: '' });
+}
+
+// 今の回を、町村も含めた全国でやり直す
+function runAllNow() {
+  startRun_({ PREFIXES: '', ALL: '1' });
+}
+
+function startRun_(opts) {
+  PropertiesService.getScriptProperties().setProperties(Object.assign({ RUN_MONTH: month_(), CURSOR: '0' }, opts));
   setup();
   tick();
 }
@@ -54,7 +63,7 @@ function tick() {
   if (!lock.tryLock(1000)) return;
   const start = Date.now();
   const p = PropertiesService.getScriptProperties();
-  if (p.getProperty('RUN_MONTH') !== month_()) p.setProperties({ RUN_MONTH: month_(), CURSOR: '0', PREFIXES: '' });
+  if (p.getProperty('RUN_MONTH') !== month_()) p.setProperties({ RUN_MONTH: month_(), CURSOR: '0', PREFIXES: '', ALL: '' });
   let cursor = Number(p.getProperty('CURSOR'));
   if (cursor < 0) return lock.releaseLock();
 
@@ -63,7 +72,7 @@ function tick() {
   const master = ss.getSheetByName(SHEET_MASTER);
   const log = ss.getSheetByName(SHEET_LOG);
   const prefixes = (p.getProperty('PREFIXES') || '').split(',').filter(Boolean);
-  const targets = targets_(master.getRange(2, 1, master.getLastRow() - 1, 6).getValues(), month_(), prefixes);
+  const targets = targets_(master.getRange(2, 1, master.getLastRow() - 1, 6).getValues(), month_(), prefixes, p.getProperty('ALL') === '1');
   const prev = lastRows_(log.getRange(2, 1, Math.max(log.getLastRow() - 1, 1), 19).getValues());
 
   try {
@@ -80,7 +89,7 @@ function tick() {
     }
     if (cursor >= targets.length) {
       p.setProperty('CURSOR', '-1');
-      slack_(keys, `今月の公式情報の自動取得が終わりました（${targets.length}件）`);
+      slack_(keys, `今回の公式情報の自動取得が終わりました（${targets.length}件）`);
     }
     p.deleteProperty('LAST_ERROR');
   } catch (e) {
@@ -133,9 +142,9 @@ function crawlOne_(t, prev, keys) {
 
 // ---- 判定（テストあり） ----
 
-function targets_(rows, month, prefixes) {
+function targets_(rows, month, prefixes, all) {
   // 試運転（県を絞ったとき）は町村を含めない
-  const quarterly = !prefixes.length && ['01', '04', '07', '10'].includes(month.slice(5));
+  const quarterly = all || (!prefixes.length && ['01', '04', '07', '10'].includes(month.slice(5)));
   return rows.map((r, i) => ({ row: i + 2, code: String(r[0]).padStart(6, '0'), pref: r[1], name: r[2], kind: r[3], madoguchi: String(r[4]), current: String(r[5] || '') }))
     .filter(t => !prefixes.length || prefixes.includes(t.code.slice(0, 2)))
     .filter(t => quarterly || isMonthly_(t));
@@ -348,6 +357,7 @@ function slack_(keys, text) {
   UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ text }), muteHttpExceptions: true });
 }
 
+// 回の区切りは毎月24日。24日〜翌月23日を、24日のある月の回として数える
 function month_() {
-  return Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM');
+  return Utilities.formatDate(new Date(Date.now() - 23 * 24 * 3600 * 1000), 'Asia/Tokyo', 'yyyy-MM');
 }

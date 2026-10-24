@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -131,5 +131,16 @@ assert.ok(r6[18].startsWith('要確認'));
 // 検索の上限に達していたら、検索せずに止まる
 const realSearch = vm.runInContext('(function(){ ' + fs.readFileSync(__dirname + '/Code.gs', 'utf8').match(/function search_[\s\S]*?\n}\n/)[0] + ' return search_; })()', ctx);
 assert.throws(() => realSearch({ pref: '茨城県', name: '水戸市' }, 'k', { left: 0, used: () => {} }), e => e.budget === true);
+
+// 判断の傾向だけの違いは「変更」にしない
+assert.strictEqual(f.judgeChange_(prev, { status: '掲載あり', tendency: '基準総則どおり', rev2026: 'なし' }), '変化なし');
+
+// 通知の1行
+const atsugi = { pref: '神奈川県', name: '厚木市', current: '掲載あり' };
+const crow = Array(19).fill(''); crow[5] = '掲載なし（確認済）'; crow[6] = 'https://www.city.atsugi.kanagawa.jp/a.html'; crow.oneline = '継続使用なら建築物';
+assert.strictEqual(f.changeLine_(atsugi, ['', '', '', '', '', '掲載あり'], crow),
+  '・【要確認】神奈川県厚木市　掲載あり → 掲載なし｜継続使用なら建築物 <https://www.city.atsugi.kanagawa.jp/a.html|ページ>');
+const crow2 = Array(19).fill(''); crow2[5] = '掲載なし（確認済）';
+assert.strictEqual(f.changeLine_({ pref: '宮城県', name: '（県）', current: '' }, null, crow2), '・宮城県　なし → 掲載なし｜掲載なし');
 
 console.log('ok');

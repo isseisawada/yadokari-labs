@@ -82,6 +82,7 @@ function tick() {
   const { list: targets, monthly, towns } = targets_(master.getRange(2, 1, master.getLastRow() - 1, 6).getValues(), prefixes, townStart);
   const budget = { left: SEARCH_CAP - Number(p.getProperty('SEARCHES') || 0), used: () => p.setProperty('SEARCHES', String(SEARCH_CAP - budget.left)) };
   const prev = lastRows_(log.getRange(2, 1, Math.max(log.getLastRow() - 1, 1), 19).getValues());
+  const changes = [];
 
   try {
     while (cursor < targets.length && Date.now() - start < BATCH_MS) {
@@ -91,22 +92,22 @@ function tick() {
       log.appendRow(row);
       prev[t.code] = row;
       if (!keepMaster_(t.current, row[5])) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
-      if (row[17] === '変更') slack_(keys, `【公式情報の変化${keepMaster_(t.current, row[5]) && t.current === '掲載あり' ? '・要確認' : ''}】${t.pref}${place_(t)}：${before ? before[5] : 'なし'} → ${row[5]}\n${row[10]}\n${row[6]}`);
+      if (row[17] === '変更') changes.push(changeLine_(t, before, row));
       cursor++;
       p.setProperty('CURSOR', String(cursor));
       if (cursor > monthly) p.setProperty('TOWN_NEXT', String((townStart + cursor - monthly) % towns));
     }
     if (cursor >= targets.length) {
       p.setProperty('CURSOR', '-1');
-      slack_(keys, `今回の公式情報の自動取得が終わりました（${targets.length}件）`);
+      slack_(keys, `今回の自動取得が終わりました（${targets.length}件）`);
     }
     p.deleteProperty('LAST_ERROR');
   } catch (e) {
     if (e.budget) {
       // 無料枠を使い切ったら今回はここまで。町村は次の回に続きから
       p.setProperty('CURSOR', '-1');
-      const next = cursor < monthly ? '県・特定行政庁の残りと町村' : `町村は「${(targets[cursor] || {}).name || ''}」から`;
-      slack_(keys, `今回の自動取得は無料枠の範囲で${cursor}件まで調べました。${next}は次の回（毎月24日）に続けます。`);
+      const next = cursor < monthly ? '県・特定行政庁の残りから' : `町村は${(targets[cursor] || {}).name || ''}から`;
+      slack_(keys, `無料枠の範囲で${cursor}件まで調べました。続きは次の24日に（${next}）`);
       return;
     }
     // 同じエラーは1回だけ通知。カーソルは進めないので、次の回に同じ自治体からやり直す
@@ -114,8 +115,17 @@ function tick() {
     p.setProperty('LAST_ERROR', String(e));
     throw e;
   } finally {
+    // 変化は30分ごとの回でまとめて1通
+    if (changes.length) slack_(keys, `公式情報の変化 ${changes.length}件（<${ss.getUrl()}|管理表を開く>）\n` + changes.join('\n'));
     lock.releaseLock();
   }
+}
+
+// 通知の1行：・【要確認】神奈川県厚木市　掲載あり → 掲載なし｜継続使用なら建築物 <URL|ページ>
+function changeLine_(t, before, row) {
+  const short = x => String(x || 'なし').replace(/（.*）$/, '');
+  const warn = t.current === '掲載あり' && row[5] !== '掲載あり' ? '【要確認】' : '';
+  return `・${warn}${t.pref}${place_(t)}　${short(before && before[5])} → ${short(row[5])}｜${row.oneline || short(row[5])}` + (row[6] ? ` <${row[6]}|ページ>` : '');
 }
 
 function crawlOne_(t, prev, keys, budget) {
@@ -152,8 +162,10 @@ function crawlOne_(t, prev, keys, budget) {
   if (t.current === '掲載あり' && r.status !== '掲載あり') {
     r = Object.assign({}, r, { memo: '要確認：マスタは掲載ありのまま。人が確かめて直す。' + r.memo });
   }
-  return base.concat([r.status, r.url, r.kind, r.updated, r.title, r.summary, r.tendency, r.aobon, r.rev2026, r.dept,
+  const row = base.concat([r.status, r.url, r.kind, r.updated, r.title, r.summary, r.tendency, r.aobon, r.rev2026, r.dept,
     r.contact, r.url && chosen ? chosen.hash : '', judgeChange_(prev, r), (r.memo ? r.memo.replace(/。+$/, '') + '。' : '') + '自動取得']);
+  row.oneline = r.oneline; // Slack 通知用（シートには書かない）
+  return row;
 }
 
 // ---- 判定（テストあり） ----
@@ -183,8 +195,9 @@ function judgeChange_(prev, r) {
   if (!prev) return '新規';
   // 前回は見つかっていたのに今回見つからないのは、サイトの障害や検索の揺れが多いので変化扱いしない
   if (r.status === '未発見（要確認）' && isFound_(prev[5])) return '変化なし';
-  const differs = (a, b) => a !== '' && b !== '' && a !== b; // AIが空欄で返した項目は比べない
-  return prev[5] !== r.status || differs(prev[11], r.tendency) || differs(prev[13], r.rev2026) ? '変更' : '変化なし';
+  // 判断の傾向は付け方が揺れるので比べない。AIが空欄で返した項目も比べない
+  const differs = (a, b) => a !== '' && b !== '' && a !== b;
+  return prev[5] !== r.status || differs(prev[13], r.rev2026) ? '変更' : '変化なし';
 }
 
 // マスタを書き換えないとき：取得できなかった／前は見つかっていたのに見つからない／「掲載あり」がAIの判定だけで外れる
@@ -333,16 +346,17 @@ const SYSTEM = `あなたは日本の自治体の建築行政を調べる担当�
 - aobon: 「建築確認のための基準総則・集団規定の適用事例」（青本）への言及があれば「あり」。
 - rev2026: 青本の2026年度版（改訂版）への言及があれば「あり」。
 - summary: 判断基準の要旨を1〜2文で。
+- oneline: 通知用のひとこと。25字以内で、結論だけ（例：「継続使用なら建築物」「車検ありなら車両扱い」「トレーラーハウスの記載なし」）。
 - updated: ページに書かれた更新日・発出日。YYYY/MM/DD の形で。
 - サイトの障害表示・メンテナンス表示しか無いときは「未発見（要確認）」にし、memoにそう書く。`;
 
 const SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['status', 'url', 'kind', 'updated', 'title', 'summary', 'tendency', 'aobon', 'rev2026', 'dept', 'contact', 'memo'],
+  required: ['status', 'url', 'kind', 'updated', 'title', 'summary', 'oneline', 'tendency', 'aobon', 'rev2026', 'dept', 'contact', 'memo'],
   properties: {
     status: { type: 'string', enum: ['掲載あり', '掲載なし（確認済）', '未発見（要確認）'] },
     url: { type: 'string' }, kind: { type: 'string', enum: ['HTML', 'PDF', ''] }, updated: { type: 'string' },
-    title: { type: 'string' }, summary: { type: 'string' },
+    title: { type: 'string' }, summary: { type: 'string' }, oneline: { type: 'string' },
     tendency: { type: 'string', enum: ['基準総則どおり', '厳しい', '個別判断', ''] },
     aobon: { type: 'string', enum: ['あり', 'なし', ''] }, rev2026: { type: 'string', enum: ['あり', 'なし', ''] },
     dept: { type: 'string' }, contact: { type: 'string' }, memo: { type: 'string' },

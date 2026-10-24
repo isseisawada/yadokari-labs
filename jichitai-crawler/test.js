@@ -173,5 +173,8 @@ assert.deepStrictEqual(f.hearingSummary_(hrows, ['203238', '222194', '999999']).
   [1, '', '可（基準総則どおり）', ''],
   ['', '', '', ''],
 ]);
+// シートから読むと日付は Date で来る
+const drow = ['slack-1', new Date(2026, 10, 1), ''].concat(Array(19).fill('')); drow[12] = '可'; drow[20] = '132012';
+assert.deepStrictEqual([...f.hearingSummary_([drow], ['132012'])[0]], [1, '2026/11/01', '可', '']);
 
 console.log('ok');

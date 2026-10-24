@@ -412,7 +412,7 @@ function hearings_(p, keys, ss, master) {
     p.setProperty('LAST_ERROR_H', String(e));
   }
   // 管理表に直接書かれた行にも団体コードを付け、マスタの集計（K〜N列）を計算し直す
-  const n = sheet.getLastRow() - 1;
+  const n = lastRow_(sheet) - 1;
   if (n < 1) return;
   const rows = sheet.getRange(2, 1, n, 22).getValues();
   const codes = rows.map(r => [r[20] !== '' ? r[20] : (r[2] || r[3] ? codeOf_(masterRows, r[2], r[3]) : '')]);
@@ -468,12 +468,20 @@ function recordHearing_(sheet, masterRows, keys, ch, root, text) {
   const row = [id, h.date || posted, h.pref, h.city, '電話ヒアリング（参考意見）', h.dept, h.phone, h.contact, nameOf_(user), h.case, h.usage,
     h.q1_raw, h.conclusion + (h.conclusion_note ? `（${h.conclusion_note}）` : ''), h.q2, h.q3, h.q4, h.other, h.rev2026, '', link,
     codeOf_(masterRows, h.pref, h.city), missing.length ? '未記入：' + missing.join('、') : ''];
-  const n = Math.max(sheet.getLastRow() - 1, 1);
-  const at = sheet.getRange(2, 1, n, 1).getValues().findIndex(r => r[0] === id);
-  const range = at >= 0 ? sheet.getRange(at + 2, 1, 1, 22) : sheet.getRange(sheet.getLastRow() + 1, 1, 1, 22);
+  const last = lastRow_(sheet);
+  const at = sheet.getRange(2, 1, Math.max(last - 1, 1), 1).getValues().findIndex(r => r[0] === id);
+  const range = sheet.getRange(at >= 0 ? at + 2 : last + 1, 1, 1, 22);
   range.offset(0, 20, 1, 1).setNumberFormat('@'); // 団体コードの先頭の0を残す
   range.setValues([row]);
   return missing;
+}
+
+// A列（記録ID）が入っている最後の行。getLastRow は空に見える行まで数えることがあり、追記が離れた行に飛ぶため
+function lastRow_(sheet) {
+  const a = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 1).getValues();
+  let i = a.length;
+  while (i > 1 && a[i - 1][0] === '') i--;
+  return i;
 }
 
 // 通知と同じチャンネルなので、雑談（自治体名も役所の回答も無い投稿）は取り込まない
@@ -506,7 +514,8 @@ function hearingSummary_(rows, codes) {
   rows.forEach(r => {
     const code = String(r[20] || '').padStart(6, '0');
     if (!r[20]) return;
-    const m = String(r[1]).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    const d = Object.prototype.toString.call(r[1]) === '[object Date]' ? Utilities.formatDate(r[1], 'Asia/Tokyo', 'yyyy/MM/dd') : String(r[1]); // シートの日付はDateで返る
+    const m = d.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
     (by[code] = by[code] || []).push({ date: m ? `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}` : '', concl: String(r[12] || '') });
   });
   const head = x => x.split('（')[0];

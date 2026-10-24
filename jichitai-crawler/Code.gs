@@ -10,6 +10,8 @@ const MAX_PAGES = 3;
 const MAX_CHARS = 8000;
 const MAX_PDF_BYTES = 800 * 1024;
 const KANTO = ['08', '09', '10', '11', '12', '13', '14'];
+// Brave の無料枠は月1,000件。1回（24日〜翌月23日）の検索をこの数までにして、町村は残りの枠で少しずつ回す
+const SEARCH_CAP = 900;
 
 // ---- メニュー ----
 
@@ -17,7 +19,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('自動取得')
     .addItem('キーを登録', 'saveKeys')
     .addItem('関東で試運転', 'pilotKanto')
-    .addItem('全国（町村も）を今すぐ調べる', 'runAllNow')
+    .addItem('今すぐ調べる（無料枠の範囲で）', 'runAllNow')
     .addItem('毎月の自動実行を開始', 'setup')
     .addToUi();
 }
@@ -42,18 +44,22 @@ function setup() {
 }
 
 function pilotKanto() {
-  startRun_({ PREFIXES: KANTO.join(','), ALL: '' });
+  startRun_(KANTO.join(','));
 }
 
-// 今の回を、町村も含めた全国でやり直す
+// 今の回を最初からやり直す（県・特定行政庁のあと、無料枠の残りで町村を前回の続きから）
 function runAllNow() {
-  startRun_({ PREFIXES: '', ALL: '1' });
+  startRun_('');
 }
 
-function startRun_(opts) {
-  PropertiesService.getScriptProperties().setProperties(Object.assign({ RUN_MONTH: month_(), CURSOR: '0' }, opts));
+function startRun_(prefixes) {
+  newRun_(PropertiesService.getScriptProperties(), prefixes);
   setup();
   tick();
+}
+
+function newRun_(p, prefixes) {
+  p.setProperties({ RUN_MONTH: month_(), CURSOR: '0', PREFIXES: prefixes, SEARCHES: '0', TOWN_START: p.getProperty('TOWN_NEXT') || '0' });
 }
 
 // ---- 本体 ----
@@ -63,7 +69,7 @@ function tick() {
   if (!lock.tryLock(1000)) return;
   const start = Date.now();
   const p = PropertiesService.getScriptProperties();
-  if (p.getProperty('RUN_MONTH') !== month_()) p.setProperties({ RUN_MONTH: month_(), CURSOR: '0', PREFIXES: '', ALL: '' });
+  if (p.getProperty('RUN_MONTH') !== month_()) newRun_(p, '');
   let cursor = Number(p.getProperty('CURSOR'));
   if (cursor < 0) return lock.releaseLock();
 
@@ -72,20 +78,23 @@ function tick() {
   const master = ss.getSheetByName(SHEET_MASTER);
   const log = ss.getSheetByName(SHEET_LOG);
   const prefixes = (p.getProperty('PREFIXES') || '').split(',').filter(Boolean);
-  const targets = targets_(master.getRange(2, 1, master.getLastRow() - 1, 6).getValues(), month_(), prefixes, p.getProperty('ALL') === '1');
+  const townStart = Number(p.getProperty('TOWN_START') || 0);
+  const { list: targets, monthly, towns } = targets_(master.getRange(2, 1, master.getLastRow() - 1, 6).getValues(), prefixes, townStart);
+  const budget = { left: SEARCH_CAP - Number(p.getProperty('SEARCHES') || 0), used: () => p.setProperty('SEARCHES', String(SEARCH_CAP - budget.left)) };
   const prev = lastRows_(log.getRange(2, 1, Math.max(log.getLastRow() - 1, 1), 19).getValues());
 
   try {
     while (cursor < targets.length && Date.now() - start < BATCH_MS) {
       const t = targets[cursor];
       const before = prev[t.code];
-      const row = crawlOne_(t, before, keys);
+      const row = crawlOne_(t, before, keys, budget);
       log.appendRow(row);
       prev[t.code] = row;
       if (!keepMaster_(t.current, row[5])) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
       if (row[17] === '変更') slack_(keys, `【公式情報の変化${keepMaster_(t.current, row[5]) && t.current === '掲載あり' ? '・要確認' : ''}】${t.pref}${place_(t)}：${before ? before[5] : 'なし'} → ${row[5]}\n${row[10]}\n${row[6]}`);
       cursor++;
       p.setProperty('CURSOR', String(cursor));
+      if (cursor > monthly) p.setProperty('TOWN_NEXT', String((townStart + cursor - monthly) % towns));
     }
     if (cursor >= targets.length) {
       p.setProperty('CURSOR', '-1');
@@ -93,6 +102,13 @@ function tick() {
     }
     p.deleteProperty('LAST_ERROR');
   } catch (e) {
+    if (e.budget) {
+      // 無料枠を使い切ったら今回はここまで。町村は次の回に続きから
+      p.setProperty('CURSOR', '-1');
+      const next = cursor < monthly ? '県・特定行政庁の残りと町村' : `町村は「${(targets[cursor] || {}).name || ''}」から`;
+      slack_(keys, `今回の自動取得は無料枠の範囲で${cursor}件まで調べました。${next}は次の回（毎月24日）に続けます。`);
+      return;
+    }
     // 同じエラーは1回だけ通知。カーソルは進めないので、次の回に同じ自治体からやり直す
     if (p.getProperty('LAST_ERROR') !== String(e)) slack_(keys, `自動取得が止まりました：${e}`);
     p.setProperty('LAST_ERROR', String(e));
@@ -102,7 +118,7 @@ function tick() {
   }
 }
 
-function crawlOne_(t, prev, keys) {
+function crawlOne_(t, prev, keys, budget) {
   const today = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd');
   const base = [today, "'" + t.code, t.pref, t.name, '公式ページ'];
 
@@ -112,7 +128,7 @@ function crawlOne_(t, prev, keys) {
     return base.concat(prev.slice(5, 16), [prevPage.hash, '変化なし', '本文変化なし（自動）']);
   }
 
-  const found = search_(t, keys.getProperty('BRAVE_API_KEY')).filter(u => !prevPage || u !== prevPage.url);
+  const found = search_(t, keys.getProperty('BRAVE_API_KEY'), budget).filter(u => !prevPage || u !== prevPage.url);
   const pages = (prevPage ? [prevPage] : []).concat(found.slice(0, MAX_PAGES - (prevPage ? 1 : 0)).map(fetchPage_));
   const ok = pages.filter(x => x.ok);
   if (!ok.length) {
@@ -142,15 +158,17 @@ function crawlOne_(t, prev, keys) {
 
 // ---- 判定（テストあり） ----
 
-function targets_(rows, month, prefixes, all) {
-  // 試運転（県を絞ったとき）は町村を含めない
-  const quarterly = all || (!prefixes.length && ['01', '04', '07', '10'].includes(month.slice(5)));
-  return rows.map((r, i) => ({ row: i + 2, code: String(r[0]).padStart(6, '0'), pref: r[1], name: r[2], kind: r[3], madoguchi: String(r[4]), current: String(r[5] || '') }))
-    .filter(t => !prefixes.length || prefixes.includes(t.code.slice(0, 2)))
-    .filter(t => quarterly || isMonthly_(t));
+// 県・特定行政庁を先に全部、そのあと町村を townStart から一周ぶん並べる（試運転で県を絞ったときは町村なし）
+function targets_(rows, prefixes, townStart) {
+  const all = rows.map((r, i) => ({ row: i + 2, code: String(r[0]).padStart(6, '0'), pref: r[1], name: r[2], kind: r[3], madoguchi: String(r[4]), current: String(r[5] || '') }))
+    .filter(t => !prefixes.length || prefixes.includes(t.code.slice(0, 2)));
+  const monthly = all.filter(isMonthly_);
+  const towns = prefixes.length ? [] : all.filter(t => !isMonthly_(t));
+  const s = towns.length ? townStart % towns.length : 0;
+  return { list: monthly.concat(towns.slice(s), towns.slice(0, s)), monthly: monthly.length, towns: towns.length };
 }
 
-// 建築物かを判断するのは都道府県と特定行政庁だけなので、そこは毎月。町村は四半期ごと
+// 建築物かを判断するのは都道府県と特定行政庁だけなので、そこは毎回。町村は無料枠の残りで
 function isMonthly_(t) {
   return ['都道府県', '政令市', '特別区'].includes(t.kind) || /特定行政庁/.test(t.madoguchi);
 }
@@ -241,19 +259,21 @@ function htmlToText_(html) {
 
 // ---- 外部とのやりとり ----
 
-function search_(t, key) {
-  const where = t.pref + place_(t);
-  const urls = [];
-  [`${where} トレーラーハウス 建築物`, `${where} 車両を利用した工作物 コンテナ 建築確認`].forEach(q => {
-    const res = UrlFetchApp.fetch('https://api.search.brave.com/res/v1/web/search?count=10&q=' + encodeURIComponent(q), {
-      headers: { 'X-Subscription-Token': key, Accept: 'application/json' }, muteHttpExceptions: true,
-    });
-    if (res.getResponseCode() !== 200) throw new Error(`検索API ${res.getResponseCode()}: ${res.getContentText().slice(0, 200)}`);
-    ((JSON.parse(res.getContentText()).web || {}).results || []).forEach(x => {
-      if (isOfficial_(x.url) && isAbout_(t, x) && !urls.includes(x.url)) urls.push(x.url);
-    });
+// 無料枠に収めるため、検索は1団体1回
+function search_(t, key, budget) {
+  if (budget.left <= 0) throw Object.assign(new Error('今回の検索の上限に達しました'), { budget: true });
+  const q = `${t.pref}${place_(t)} トレーラーハウス 建築物`;
+  const res = UrlFetchApp.fetch('https://api.search.brave.com/res/v1/web/search?count=10&q=' + encodeURIComponent(q), {
+    headers: { 'X-Subscription-Token': key, Accept: 'application/json' }, muteHttpExceptions: true,
   });
-  return urls;
+  budget.left--;
+  budget.used();
+  const code = res.getResponseCode();
+  // 402・429 は残高（無料枠）切れ。先払いで残高0なので、お金はかからず止まるだけ
+  if (code === 402 || code === 429) throw Object.assign(new Error(`検索APIの無料枠を使い切りました（${code}）`), { budget: true });
+  if (code !== 200) throw new Error(`検索API ${code}: ${res.getContentText().slice(0, 200)}`);
+  return ((JSON.parse(res.getContentText()).web || {}).results || [])
+    .filter(x => isOfficial_(x.url) && isAbout_(t, x)).map(x => x.url);
 }
 
 function fetchPage_(url) {

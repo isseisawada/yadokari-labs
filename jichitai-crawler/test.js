@@ -31,11 +31,16 @@ assert.strictEqual(f.htmlToText_('<html><script>x()</script><p>建築物&amp;工
 const rows = [['080004', '茨城県', '（県）', '都道府県', '県'], ['082015', '茨城県', '水戸市', '市', '市（特定行政庁）'],
   ['082058', '茨城県', '石岡市', '市', '県（各県民センター）'], ['112160', '埼玉県', '羽生市', '市', '市（限定特定行政庁。それ以外は県）'],
   ['131016', '東京都', '千代田区', '特別区', '区']];
-assert.deepStrictEqual([...f.targets_(rows, '2026-11', [])].map(t => t.code), ['080004', '082015', '112160', '131016']);
-assert.strictEqual(f.targets_(rows, '2027-01', []).length, 5);
-assert.strictEqual(f.targets_(rows, '2026-10', ['08']).length, 2); // 試運転は四半期の月でも町村を含めない
-assert.strictEqual(f.targets_(rows, '2026-11', [], true).length, 5); // 「全国（町村も）」は月に関係なく全部
-assert.deepStrictEqual([...f.targets_(rows, '2026-11', ['11'])].map(t => t.row), [5]);
+// 対象の並び：県・特定行政庁が先、町村はそのあとに townStart から一周
+const rows2 = rows.concat([['082074', '茨城県', '結城市', '市', '県'], ['082082', '茨城県', '龍ケ崎市', '市', '県']]);
+const all0 = f.targets_(rows2, [], 0);
+assert.deepStrictEqual([...all0.list].map(t => t.code), ['080004', '082015', '112160', '131016', '082058', '082074', '082082']);
+assert.deepStrictEqual([all0.monthly, all0.towns], [4, 3]);
+assert.deepStrictEqual([...f.targets_(rows2, [], 2).list].slice(4).map(t => t.code), ['082082', '082058', '082074']);
+assert.deepStrictEqual([...f.targets_(rows2, [], 5).list].slice(4).map(t => t.code), ['082082', '082058', '082074']); // 一周を超えても回る
+const kanto08 = f.targets_(rows2, ['08'], 0); // 試運転は町村を含めない
+assert.deepStrictEqual([kanto08.list.length, kanto08.towns], [2, 0]);
+assert.deepStrictEqual([...f.targets_(rows2, ['11'], 0).list].map(t => t.row), [5]);
 
 // 変化の判定
 const prev = Array(19).fill('');
@@ -122,5 +127,9 @@ vm.runInContext('fetchPage_ = this.fetchPage_;', ctx);
 assert.strictEqual(f.crawlOne_(koga, p5, { getProperty: () => '' })[5], '掲載なし（確認済）');
 const r6 = f.crawlOne_(Object.assign({ current: '掲載あり' }, koga), null, { getProperty: () => '' });
 assert.ok(r6[18].startsWith('要確認'));
+
+// 検索の上限に達していたら、検索せずに止まる
+const realSearch = vm.runInContext('(function(){ ' + fs.readFileSync(__dirname + '/Code.gs', 'utf8').match(/function search_[\s\S]*?\n}\n/)[0] + ' return search_; })()', ctx);
+assert.throws(() => realSearch({ pref: '茨城県', name: '水戸市' }, 'k', { left: 0, used: () => {} }), e => e.budget === true);
 
 console.log('ok');

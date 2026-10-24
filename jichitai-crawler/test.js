@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_, isNotice_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -176,5 +176,12 @@ assert.deepStrictEqual(f.hearingSummary_(hrows, ['203238', '222194', '999999']).
 // シートから読むと日付は Date で来る
 const drow = ['slack-1', new Date(2026, 10, 1), ''].concat(Array(19).fill('')); drow[12] = '可'; drow[20] = '132012';
 assert.deepStrictEqual([...f.hearingSummary_([drow], ['132012'])[0]], [1, '2026/11/01', '可', '']);
+
+// お知らせ投稿は取り込まない
+assert.ok(f.isNotice_('<!subteam^S08S8GB1346> *【お知らせ】役所ヒアリングの記録'));
+assert.ok(f.isNotice_('*【お知らせ】* 来週から'));
+assert.ok(f.isNotice_('<!here> 八王子市の件'));
+assert.ok(!f.isNotice_('八王子市の建築指導課キシさんに電話。車両扱いでOK'));
+assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
 
 console.log('ok');

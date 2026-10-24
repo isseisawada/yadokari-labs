@@ -444,6 +444,7 @@ function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
   // 新しい投稿
   const msgs = (slackApi_(keys, 'conversations.history', { channel: ch, oldest: p.getProperty('HEARING_TS') || '0', limit: 100 }).messages || [])
     .filter(m => !m.bot_id && (!m.subtype || m.subtype === 'file_share') && (!m.thread_ts || m.thread_ts === m.ts))
+    .filter(m => !isNotice_(m.text))
     .sort((a, b) => Number(a.ts) - Number(b.ts));
   msgs.forEach(m => {
     const missing = recordHearing_(sheet, masterRows, keys, ch, m, m.text);
@@ -482,6 +483,11 @@ function lastRow_(sheet) {
   let i = a.length;
   while (i > 1 && a[i - 1][0] === '') i--;
   return i;
+}
+
+// グループ宛て（@channel・@here・ユーザーグループ）や「【お知らせ】」の投稿は、ヒアリングのメモではない
+function isNotice_(text) {
+  return /<!(channel|here|everyone|subteam\^)/.test(text || '') || /^[\s*_]*【お知らせ】/.test(String(text || '').replace(/<[@!][^>]*>/g, ''));
 }
 
 // 通知と同じチャンネルなので、雑談（自治体名も役所の回答も無い投稿）は取り込まない

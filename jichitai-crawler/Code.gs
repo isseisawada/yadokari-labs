@@ -129,7 +129,7 @@ function tick() {
 function changeLine_(t, before, row) {
   const short = x => String(x || 'なし').replace(/（.*）$/, '');
   const warn = t.current === '掲載あり' && row[5] !== '掲載あり' ? '【要確認】' : '';
-  return `・${warn}${t.pref}${place_(t)}　${short(before && before[5])} → ${short(row[5])}｜${row.oneline || short(row[5])}` + (row[6] ? ` <${row[6]}|ページ>` : '');
+  return `・${warn}${t.pref}${place_(t)}　${short(before && before[5])} → ${short(row[5])}${row.oneline ? '｜' + row.oneline : ''}` + (row[6] ? ` <${row[6]}|ページ>` : '');
 }
 
 function crawlOne_(t, prev, keys, budget) {

@@ -141,7 +141,7 @@ const crow = Array(19).fill(''); crow[5] = '掲載なし（確認済）'; crow[6
 assert.strictEqual(f.changeLine_(atsugi, ['', '', '', '', '', '掲載あり'], crow),
   '・【要確認】神奈川県厚木市　掲載あり → 掲載なし｜継続使用なら建築物 <https://www.city.atsugi.kanagawa.jp/a.html|ページ>');
 const crow2 = Array(19).fill(''); crow2[5] = '掲載なし（確認済）';
-assert.strictEqual(f.changeLine_({ pref: '宮城県', name: '（県）', current: '' }, null, crow2), '・宮城県　なし → 掲載なし｜掲載なし');
+assert.strictEqual(f.changeLine_({ pref: '宮城県', name: '（県）', current: '' }, null, crow2), '・宮城県　なし → 掲載なし');
 
 // ---- ヒアリング ----
 const mrows = [['200000', '長野県', '（県）', '都道府県'], ['203246', '長野県', '立科町', '町'], ['203238', '長野県', '御代田町', '町'],

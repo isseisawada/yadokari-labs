@@ -447,17 +447,20 @@ function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
     .sort((a, b) => Number(a.ts) - Number(b.ts));
   msgs.forEach(m => {
     const missing = recordHearing_(sheet, masterRows, keys, ch, m, m.text);
-    const asked = ask(m.ts, missing);
-    if (missing.length) pending[m.ts] = asked;
+    if (missing) {
+      const asked = ask(m.ts, missing);
+      if (missing.length) pending[m.ts] = asked;
+    }
     p.setProperty('HEARING_TS', m.ts);
   });
   p.setProperty('HEARING_PENDING', JSON.stringify(pending));
 }
 
-// 1件を整理して記録（同じ投稿の行があれば上書き）。足りない項目を返す
+// 1件を整理して記録（同じ投稿の行があれば上書き）。足りない項目を返す。ヒアリングでない投稿は null
 function recordHearing_(sheet, masterRows, keys, ch, root, text) {
   const posted = Utilities.formatDate(new Date(Number(root.ts) * 1000), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm');
   const h = claudeJson_(SYSTEM_H, SCHEMA_H, [{ type: 'text', text: `投稿日時：${posted}\n---\n${text}` }], keys.getProperty('ANTHROPIC_API_KEY'), 'ヒアリング');
+  if (!isHearing_(h)) return null;
   const user = slackApi_(keys, 'users.info', { user: root.user }).user || {};
   const link = slackApi_(keys, 'chat.getPermalink', { channel: ch, message_ts: root.ts }).permalink || '';
   const missing = missingOf_(h);
@@ -471,6 +474,11 @@ function recordHearing_(sheet, masterRows, keys, ch, root, text) {
   range.offset(0, 20, 1, 1).setNumberFormat('@'); // 団体コードの先頭の0を残す
   range.setValues([row]);
   return missing;
+}
+
+// 通知と同じチャンネルなので、雑談（自治体名も役所の回答も無い投稿）は取り込まない
+function isHearing_(h) {
+  return !!((h.pref || h.city) || h.q1_raw);
 }
 
 function missingOf_(h) {

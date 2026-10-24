@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -156,6 +156,8 @@ const full = { pref: '東京都', city: '八王子市', dept: '建築指導課',
 assert.deepStrictEqual([...f.missingOf_(full)], []);
 assert.deepStrictEqual([...f.missingOf_(Object.assign({}, full, { contact: '', conclusion: '不明' }))], ['先方の担当者名', '結論（車両扱いでよいか）']);
 
+assert.ok(!f.isHearing_({ pref: '', city: '', q1_raw: '' })); // 「了解です」など
+assert.ok(f.isHearing_({ pref: '', city: '八王子市', q1_raw: '' }));
 assert.strictEqual(f.nameOf_({ real_name: 'Michiko Endo / 遠藤美智子 / 月曜休み' }), '遠藤美智子');
 assert.strictEqual(f.nameOf_({ real_name: 'Issei Sawada/さわだいっせい' }), 'Issei Sawada');
 

@@ -3,6 +3,7 @@
 
 const SHEET_MASTER = '1_自治体マスタ';
 const SHEET_LOG = '2_公式情報（クロール履歴）';
+const SHEET_HEARING = '3_ヒアリング履歴';
 const MODEL = 'claude-haiku-5-5';
 const BATCH_MS = 4.5 * 60 * 1000; // Apps Script は1回6分で止まるので、その手前で区切る
 const MAX_PAGES = 3;
@@ -29,7 +30,9 @@ function saveKeys() {
   const ui = SpreadsheetApp.getUi();
   const props = PropertiesService.getUserProperties();
   [['ANTHROPIC_API_KEY', 'Claude API キー'], ['BRAVE_API_KEY', 'Brave Search API キー'],
-   ['SLACK_WEBHOOK_URL', 'Slack Webhook URL（まだ無ければ空のままOK）']].forEach(([k, label]) => {
+   ['SLACK_WEBHOOK_URL', 'Slack Webhook URL（まだ無ければ空のままOK）'],
+   ['SLACK_BOT_TOKEN', 'Slack Bot Token（xoxb- で始まるもの。ヒアリング取り込み用）'],
+   ['HEARING_CHANNEL', 'ヒアリング用チャンネルのID（C で始まるもの）']].forEach(([k, label]) => {
     const r = ui.prompt(label, ui.ButtonSet.OK_CANCEL);
     if (r.getSelectedButton() === ui.Button.OK && r.getResponseText().trim()) props.setProperty(k, r.getResponseText().trim());
   });
@@ -69,13 +72,14 @@ function tick() {
   if (!lock.tryLock(1000)) return;
   const start = Date.now();
   const p = PropertiesService.getScriptProperties();
-  if (p.getProperty('RUN_MONTH') !== month_()) newRun_(p, '');
-  let cursor = Number(p.getProperty('CURSOR'));
-  if (cursor < 0) return lock.releaseLock();
-
   const keys = PropertiesService.getUserProperties();
   const ss = SpreadsheetApp.getActive();
   const master = ss.getSheetByName(SHEET_MASTER);
+  hearings_(p, keys, ss, master); // ヒアリングの取り込みと集計は毎回（公式情報の回が終わっていても）
+
+  if (p.getProperty('RUN_MONTH') !== month_()) newRun_(p, '');
+  let cursor = Number(p.getProperty('CURSOR'));
+  if (cursor < 0) return lock.releaseLock();
   const log = ss.getSheetByName(SHEET_LOG);
   const prefixes = (p.getProperty('PREFIXES') || '').split(',').filter(Boolean);
   const townStart = Number(p.getProperty('TOWN_START') || 0);
@@ -370,18 +374,22 @@ function ask_(t, pages, key) {
     if (x.pdf) content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: x.pdf } });
   });
   content.push({ type: 'text', text: `調べる自治体：${t.pref}${place_(t) || '（県）'}（団体コード ${t.code}）` });
+  return claudeJson_(SYSTEM, SCHEMA, content, key, t.code);
+}
+
+function claudeJson_(system, schema, content, key, label) {
   const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,
     headers: { 'x-api-key': key, 'anthropic-version': '2026-10-21' },
     payload: JSON.stringify({
-      model: MODEL, max_tokens: 8000, system: SYSTEM,
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
+      model: MODEL, max_tokens: 8000, system,
+      output_config: { effort: 'low', format: { type: 'json_schema', schema } },
       messages: [{ role: 'user', content }],
     }),
   });
   if (res.getResponseCode() !== 200) throw new Error(`Claude API ${res.getResponseCode()}: ${res.getContentText().slice(0, 300)}`);
   const msg = JSON.parse(res.getContentText());
-  if (msg.stop_reason !== 'end_turn') throw new Error(`Claude API の応答が途中で止まりました（${msg.stop_reason}）：${t.code}`);
+  if (msg.stop_reason !== 'end_turn') throw new Error(`Claude API の応答が途中で止まりました（${msg.stop_reason}）：${label}`);
   return JSON.parse(msg.content.find(b => b.type === 'text').text);
 }
 
@@ -390,6 +398,148 @@ function slack_(keys, text) {
   if (!url) return console.log(text);
   UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ text }), muteHttpExceptions: true });
 }
+
+// ---- ヒアリング（Slack の投稿を取り込み、管理表の 3_ヒアリング履歴 に記録） ----
+
+function hearings_(p, keys, ss, master) {
+  const sheet = ss.getSheetByName(SHEET_HEARING);
+  const masterRows = master.getRange(2, 1, master.getLastRow() - 1, 4).getValues();
+  try {
+    if (keys.getProperty('SLACK_BOT_TOKEN') && keys.getProperty('HEARING_CHANNEL')) intakeSlack_(p, keys, sheet, masterRows, ss.getUrl() + '#gid=' + sheet.getSheetId());
+    p.deleteProperty('LAST_ERROR_H');
+  } catch (e) {
+    if (p.getProperty('LAST_ERROR_H') !== String(e)) slack_(keys, `ヒアリングの取り込みが止まりました：${e}`);
+    p.setProperty('LAST_ERROR_H', String(e));
+  }
+  // 管理表に直接書かれた行にも団体コードを付け、マスタの集計（K〜N列）を計算し直す
+  const n = sheet.getLastRow() - 1;
+  if (n < 1) return;
+  const rows = sheet.getRange(2, 1, n, 22).getValues();
+  const codes = rows.map(r => [r[20] !== '' ? r[20] : (r[2] || r[3] ? codeOf_(masterRows, r[2], r[3]) : '')]);
+  sheet.getRange(2, 21, n, 1).setNumberFormat('@').setValues(codes);
+  rows.forEach((r, i) => { r[20] = codes[i][0]; });
+  master.getRange(2, 11, masterRows.length, 4).setValues(hearingSummary_(rows, masterRows.map(r => String(r[0]).padStart(6, '0'))));
+}
+
+function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
+  const ch = keys.getProperty('HEARING_CHANNEL');
+  const pending = JSON.parse(p.getProperty('HEARING_PENDING') || '{}'); // 聞き返し中：投稿ts → 最後に見た返信ts
+  const ask = (ts, missing) => {
+    const msg = missing.length
+      ? `おおきに！記録しときました。あと「${missing.join('」「')}」だけ教えてもらえます？このスレッドに返信してもろたら追記しときます。`
+      : `おおきに！<${sheetUrl}|管理表>に記録しときました。`;
+    return slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: ts, text: msg }).ts;
+  };
+
+  // 聞き返したスレッドに返信が来ていたら、元の投稿と合わせて読み直す
+  Object.keys(pending).forEach(ts => {
+    const msgs = (slackApi_(keys, 'conversations.replies', { channel: ch, ts }).messages || []).filter(m => !m.bot_id);
+    const fresh = msgs.filter(m => m.ts !== ts && Number(m.ts) > Number(pending[ts]));
+    if (!fresh.length) return;
+    const missing = recordHearing_(sheet, masterRows, keys, ch, msgs[0], msgs.map(m => m.text).join('\n'));
+    ask(ts, missing);
+    if (missing.length) pending[ts] = fresh[fresh.length - 1].ts; else delete pending[ts];
+  });
+
+  // 新しい投稿
+  const msgs = (slackApi_(keys, 'conversations.history', { channel: ch, oldest: p.getProperty('HEARING_TS') || '0', limit: 100 }).messages || [])
+    .filter(m => !m.bot_id && (!m.subtype || m.subtype === 'file_share') && (!m.thread_ts || m.thread_ts === m.ts))
+    .sort((a, b) => Number(a.ts) - Number(b.ts));
+  msgs.forEach(m => {
+    const missing = recordHearing_(sheet, masterRows, keys, ch, m, m.text);
+    const asked = ask(m.ts, missing);
+    if (missing.length) pending[m.ts] = asked;
+    p.setProperty('HEARING_TS', m.ts);
+  });
+  p.setProperty('HEARING_PENDING', JSON.stringify(pending));
+}
+
+// 1件を整理して記録（同じ投稿の行があれば上書き）。足りない項目を返す
+function recordHearing_(sheet, masterRows, keys, ch, root, text) {
+  const posted = Utilities.formatDate(new Date(Number(root.ts) * 1000), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm');
+  const h = claudeJson_(SYSTEM_H, SCHEMA_H, [{ type: 'text', text: `投稿日時：${posted}\n---\n${text}` }], keys.getProperty('ANTHROPIC_API_KEY'), 'ヒアリング');
+  const user = slackApi_(keys, 'users.info', { user: root.user }).user || {};
+  const link = slackApi_(keys, 'chat.getPermalink', { channel: ch, message_ts: root.ts }).permalink || '';
+  const missing = missingOf_(h);
+  const id = 'slack-' + root.ts;
+  const row = [id, h.date || posted, h.pref, h.city, '電話ヒアリング（参考意見）', h.dept, h.phone, h.contact, nameOf_(user), h.case, h.usage,
+    h.q1_raw, h.conclusion + (h.conclusion_note ? `（${h.conclusion_note}）` : ''), h.q2, h.q3, h.q4, h.other, h.rev2026, '', link,
+    codeOf_(masterRows, h.pref, h.city), missing.length ? '未記入：' + missing.join('、') : ''];
+  const n = Math.max(sheet.getLastRow() - 1, 1);
+  const at = sheet.getRange(2, 1, n, 1).getValues().findIndex(r => r[0] === id);
+  const range = at >= 0 ? sheet.getRange(at + 2, 1, 1, 22) : sheet.getRange(sheet.getLastRow() + 1, 1, 1, 22);
+  range.offset(0, 20, 1, 1).setNumberFormat('@'); // 団体コードの先頭の0を残す
+  range.setValues([row]);
+  return missing;
+}
+
+function missingOf_(h) {
+  return [['自治体', h.pref || h.city], ['相談先の課', h.dept], ['先方の担当者名', h.contact], ['対象案件', h.case],
+    ['結論（車両扱いでよいか）', h.conclusion && h.conclusion !== '不明']].filter(x => !x[1]).map(x => x[0]);
+}
+
+// Slack の表示名から漢字の部分を取る（例「Michiko Endo / 遠藤美智子 / 月曜休み」→「遠藤美智子」）
+function nameOf_(user) {
+  const parts = String(user.real_name || user.name || '').split('/').map(x => x.trim());
+  return parts.find(x => /[一-鿿]/.test(x)) || parts[0] || '';
+}
+
+// 都道府県＋市区町村名からマスタの団体コードを探す（郡名・県庁などの揺れを吸収。1つに決まらなければ空欄）
+function codeOf_(masterRows, pref, city) {
+  const c = String(city || '').replace(/\s/g, '').replace(/^.+?郡/, '');
+  const isPref = !c || /^(県庁|都庁|府庁|道庁|県|都|府|道)$/.test(c);
+  const hits = masterRows.filter(r => (!pref || r[1] === pref) && (isPref ? r[3] === '都道府県' : r[2] === c));
+  return hits.length === 1 ? String(hits[0][0]).padStart(6, '0') : '';
+}
+
+// マスタの K〜N 列（ヒアリング件数／最新日／最新の結論／見解の変化）を団体コードごとに計算
+function hearingSummary_(rows, codes) {
+  const by = {};
+  rows.forEach(r => {
+    const code = String(r[20] || '').padStart(6, '0');
+    if (!r[20]) return;
+    const m = String(r[1]).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    (by[code] = by[code] || []).push({ date: m ? `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}` : '', concl: String(r[12] || '') });
+  });
+  const head = x => x.split('（')[0];
+  return codes.map(code => {
+    const list = by[code];
+    if (!list) return ['', '', '', ''];
+    const dated = list.filter(x => x.date).sort((a, b) => a.date < b.date ? -1 : 1);
+    const last = dated[dated.length - 1] || list[list.length - 1];
+    const before = dated[dated.length - 2];
+    const change = before && head(before.concl) !== head(last.concl) ? `変化あり（前回 ${before.date}「${before.concl}」）` : '';
+    return [list.length, last.date, last.concl, change];
+  });
+}
+
+function slackApi_(keys, method, params) {
+  const token = keys.getProperty('SLACK_BOT_TOKEN');
+  const res = method === 'chat.postMessage'
+    ? UrlFetchApp.fetch('https://slack.com/api/' + method, { method: 'post', contentType: 'application/json; charset=utf-8', payload: JSON.stringify(params), headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true })
+    : UrlFetchApp.fetch('https://slack.com/api/' + method + '?' + Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&'), { headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true });
+  const j = JSON.parse(res.getContentText());
+  if (!j.ok) throw new Error(`Slack ${method}: ${j.error}`);
+  return j;
+}
+
+const SYSTEM_H = `営業担当が役所に電話でヒアリングした内容のメモ（自由文）から、項目を抜き出します。メモに書いていないことは空欄にし、推測で埋めません。
+
+- date: メモに相談日時があれば YYYY/MM/DD HH:mm（時刻が無ければ YYYY/MM/DD）。年が無ければ投稿日時の年から決める。メモに無ければ空欄。
+- pref / city: 都道府県名と市区町村名（「県庁」など県に聞いた場合は city を空欄）。
+- dept: 相談先の課。phone: 電話番号。contact: 先方の担当者名。case: 対象案件（案件名・お客様名など）。usage: 用途・設置条件（用途地域・市街化調整区域・自然公園など）。
+- q1_raw: 「トレーラーハウスを車両扱い（建築物でない扱い）にしてよいか」への役所の回答を、メモの言葉に近い形で。
+- conclusion: その結論を「可」「条件付き可」「不可」「個別判断」「不明」から。conclusion_note: 条件を20字以内で（例：一時設置のみ、車検必須）。無ければ空欄。
+- q2: 建築物扱いになるケース。q3: 自治体独自のルール。q4: 浄化槽の扱い。other: その他・備考。
+- rev2026: 青本（基準総則・集団規定の適用事例）の2026年度版・改訂の話が出ていれば「あり」、無ければ空欄。`;
+
+const SCHEMA_H = {
+  type: 'object', additionalProperties: false,
+  required: ['date', 'pref', 'city', 'dept', 'phone', 'contact', 'case', 'usage', 'q1_raw', 'conclusion', 'conclusion_note', 'q2', 'q3', 'q4', 'other', 'rev2026'],
+  properties: Object.assign(
+    ...['date', 'pref', 'city', 'dept', 'phone', 'contact', 'case', 'usage', 'q1_raw', 'conclusion_note', 'q2', 'q3', 'q4', 'other'].map(k => ({ [k]: { type: 'string' } })),
+    { conclusion: { type: 'string', enum: ['可', '条件付き可', '不可', '個別判断', '不明'] }, rev2026: { type: 'string', enum: ['あり', ''] } }),
+};
 
 // 回の区切りは毎月24日。24日〜翌月23日を、24日のある月の回として数える
 function month_() {

@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -142,5 +142,34 @@ assert.strictEqual(f.changeLine_(atsugi, ['', '', '', '', '', '掲載あり'], c
   '・【要確認】神奈川県厚木市　掲載あり → 掲載なし｜継続使用なら建築物 <https://www.city.atsugi.kanagawa.jp/a.html|ページ>');
 const crow2 = Array(19).fill(''); crow2[5] = '掲載なし（確認済）';
 assert.strictEqual(f.changeLine_({ pref: '宮城県', name: '（県）', current: '' }, null, crow2), '・宮城県　なし → 掲載なし｜掲載なし');
+
+// ---- ヒアリング ----
+const mrows = [['200000', '長野県', '（県）', '都道府県'], ['203246', '長野県', '立科町', '町'], ['203238', '長野県', '御代田町', '町'],
+  ['430005', '熊本県', '（県）', '都道府県'], ['132012', '東京都', '八王子市', '市'], ['072044', '福島県', '府中町', '町'], ['342092', '広島県', '府中市', '市'], ['132063', '東京都', '府中市', '市']];
+assert.strictEqual(f.codeOf_(mrows, '長野県', '北佐久郡\n立科町'), '203246'); // 郡名と改行を無視
+assert.strictEqual(f.codeOf_(mrows, '熊本県', '県庁'), '430005');
+assert.strictEqual(f.codeOf_(mrows, '', '八王子市'), '132012'); // 県が無くても1つに決まれば
+assert.strictEqual(f.codeOf_(mrows, '', '府中市'), ''); // 2つあるなら決めない
+assert.strictEqual(f.codeOf_(mrows, '大阪府', '大阪市'), '');
+
+const full = { pref: '東京都', city: '八王子市', dept: '建築指導課', contact: 'キシ様', case: 'A社', conclusion: '個別判断' };
+assert.deepStrictEqual([...f.missingOf_(full)], []);
+assert.deepStrictEqual([...f.missingOf_(Object.assign({}, full, { contact: '', conclusion: '不明' }))], ['先方の担当者名', '結論（車両扱いでよいか）']);
+
+assert.strictEqual(f.nameOf_({ real_name: 'Michiko Endo / 遠藤美智子 / 月曜休み' }), '遠藤美智子');
+assert.strictEqual(f.nameOf_({ real_name: 'Issei Sawada/さわだいっせい' }), 'Issei Sawada');
+
+// 集計：件数・最新日・最新の結論・見解の変化（年の無い日付は最新の判定に使わない）
+const hrows = [
+  ['移行-039', '2025/10/28 11:54', '', '', '', '', '', '', '', '', '', '', '可'],
+  ['移行-040', '2026/10/13 00:00', '', '', '', '', '', '', '', '', '', '', '条件付き可（営業所用途は建築物）'],
+  ['移行-026', '12/19 13/30', '', '', '', '', '', '', '', '', '', '', '可（基準総則どおり）'],
+].map(r => r.concat(Array(9).fill('')));
+hrows[0][20] = '203238'; hrows[1][20] = 203238; hrows[2][20] = '222194';
+assert.deepStrictEqual(f.hearingSummary_(hrows, ['203238', '222194', '999999']).map(x => [...x]), [
+  [2, '2026/10/13', '条件付き可（営業所用途は建築物）', '変化あり（前回 2025/10/28「可」）'],
+  [1, '', '可（基準総則どおり）', ''],
+  ['', '', '', ''],
+]);
 
 console.log('ok');

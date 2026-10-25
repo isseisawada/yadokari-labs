@@ -80,8 +80,13 @@ const r1 = f.crawlOne_(t, p2, { getProperty: () => '' });
 assert.strictEqual(r1.length, 19);
 assert.strictEqual(r1[5], '取得エラー');
 assert.strictEqual(r1[17], '変化なし');
+const qs = [];
+ctx.search_ = (t, k, b, q) => { qs.push(q); return []; };
+vm.runInContext('search_ = this.search_;', ctx);
 const r2 = f.crawlOne_(t, null, { getProperty: () => '' });
 assert.strictEqual(r2[5], '未発見（要確認）');
+// 1回目で見つからなければ、言い方を変えてもう1回だけ探す
+assert.deepStrictEqual(qs, [undefined, '東京都三鷹市 車両を利用した工作物 建築基準法']);
 assert.strictEqual(r2.length, 19);
 
 // 本文が前回と同じなら、検索もAIも呼ばずに前回の内容を引き継ぐ

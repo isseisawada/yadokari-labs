@@ -142,7 +142,9 @@ function crawlOne_(t, prev, keys, budget) {
     return base.concat(prev.slice(5, 16), [prevPage.hash, '変化なし', '本文変化なし（自動）']);
   }
 
-  const found = search_(t, keys.getProperty('BRAVE_API_KEY'), budget).filter(u => !prevPage || u !== prevPage.url);
+  let found = search_(t, keys.getProperty('BRAVE_API_KEY'), budget).filter(u => !prevPage || u !== prevPage.url);
+  // 見つからなければ、基準総則の言い方でもう1回だけ探す
+  if (!found.length && !prevPage) found = search_(t, keys.getProperty('BRAVE_API_KEY'), budget, `${t.pref}${place_(t)} 車両を利用した工作物 建築基準法`);
   const pages = (prevPage ? [prevPage] : []).concat(found.slice(0, MAX_PAGES - (prevPage ? 1 : 0)).map(fetchPage_));
   const ok = pages.filter(x => x.ok);
   if (!ok.length) {
@@ -277,9 +279,8 @@ function htmlToText_(html) {
 // ---- 外部とのやりとり ----
 
 // 無料枠に収めるため、検索は1団体1回
-function search_(t, key, budget) {
+function search_(t, key, budget, q = `${t.pref}${place_(t)} トレーラーハウス 建築物`) {
   if (budget.left <= 0) throw Object.assign(new Error('今回の検索の上限に達しました'), { budget: true });
-  const q = `${t.pref}${place_(t)} トレーラーハウス 建築物`;
   const res = UrlFetchApp.fetch('https://api.search.brave.com/res/v1/web/search?count=10&q=' + encodeURIComponent(q), {
     headers: { 'X-Subscription-Token': key, Accept: 'application/json' }, muteHttpExceptions: true,
   });

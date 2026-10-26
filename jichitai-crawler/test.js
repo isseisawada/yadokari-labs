@@ -124,6 +124,8 @@ assert.deepStrictEqual([r5[5], r5[17]], ['掲載なし（確認済）', '変化�
 assert.ok(f.keepMaster_('掲載あり', '掲載なし（確認済）'));
 assert.ok(f.keepMaster_('掲載なし（確認済）', '未発見（要確認）'));
 assert.ok(f.keepMaster_('', '取得エラー'));
+assert.ok(f.keepMaster_('掲載あり（県の基準）', '掲載なし（確認済）'));
+assert.ok(!f.keepMaster_('掲載あり（県の基準）', '掲載あり'));
 assert.ok(!f.keepMaster_('掲載なし（確認済）', '掲載あり'));
 assert.ok(!f.keepMaster_('未発見（要確認）', '掲載なし（確認済）'));
 // 「公用車両」のような別の意味の「車両」では掲載ありにしない

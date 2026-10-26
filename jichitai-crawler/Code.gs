@@ -208,7 +208,7 @@ function judgeChange_(prev, r) {
 
 // マスタを書き換えないとき：取得できなかった／前は見つかっていたのに見つからない／「掲載あり」がAIの判定だけで外れる
 function keepMaster_(current, status) {
-  return /^取得/.test(status) || (status === '未発見（要確認）' && isFound_(current)) || (current === '掲載あり' && status !== '掲載あり');
+  return /^取得/.test(status) || (status === '未発見（要確認）' && isFound_(current)) || (/^掲載あり/.test(current) && status !== '掲載あり'); // 「掲載あり（県の基準）」も、自前のページが見つかるまで残す
 }
 
 function isFound_(status) {

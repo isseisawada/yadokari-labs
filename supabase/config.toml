@@ -1,0 +1,9 @@
+project_id = "bvwyyocqynbftjnkzsvw"
+
+# 見積もりシミュレーター（sb_publishable_ の鍵）と Slack から呼ぶので、Supabase のログイン確認は外す。
+# かわりに quote-hubspot はテスト用パイプライン以外に書き込まず、slack-approval は Slack の署名を確かめる。
+[functions.quote-hubspot]
+verify_jwt = false
+
+[functions.slack-approval]
+verify_jwt = false

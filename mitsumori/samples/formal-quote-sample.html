@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>見積書（見本）</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* 見本：freee販売の見積書の項目を YADOKARI の白・黒・グレーで組んだもの。値はすべてダミー */
+  :root { --k:#000; --g:#787878; --lg:#c8c8c8; --pg:#f5f5f5; }
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: #e9e9e9; }
+  body { font-family: "Inter", "Noto Sans JP", sans-serif; color: var(--k); font-size: 9.5pt; line-height: 1.6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sheet { width: 210mm; min-height: 297mm; margin: 10mm auto; padding: 13mm 15mm 10mm; background: #fff; display: flex; flex-direction: column; }
+  @media print { html { background: #fff; } .sheet { margin: 0; height: 297mm; min-height: 0; } }
+  .num { font-family: "Inter", sans-serif; font-variant-numeric: tabular-nums; }
+  .tbd { color: var(--g); }
+
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--k); padding-bottom: 4mm; }
+  header h1 { font-size: 20pt; font-weight: 700; letter-spacing: .5em; }
+  header .en { font-size: 8pt; letter-spacing: .2em; color: var(--g); }
+  header img { height: 9mm; }
+
+  .top { display: grid; grid-template-columns: 1fr 72mm; gap: 8mm; margin-top: 5mm; }
+  .to-name { font-size: 14pt; font-weight: 700; border-bottom: 1px solid var(--k); padding-bottom: 1.5mm; }
+  .to-name small { font-size: 10pt; margin-left: .5em; }
+  .to-addr { margin-top: 2mm; font-size: 8.5pt; color: var(--g); }
+  .meta { width: 100%; border-collapse: collapse; }
+  .meta th, .meta td { border-bottom: 1px solid var(--lg); padding: 1mm 0; font-size: 8.5pt; }
+  .meta th { text-align: left; font-weight: 500; color: var(--g); width: 22mm; }
+  .meta td { text-align: right; }
+  .from { position: relative; margin-top: 3mm; font-size: 8.5pt; line-height: 1.55; }
+  .from b { font-size: 10.5pt; }
+  .seal { position: absolute; right: 0; top: 0; width: 17mm; height: 17mm; border: 1px dashed var(--lg); color: var(--g); font-size: 7pt; display: grid; place-items: center; text-align: center; line-height: 1.3; }
+
+  .subject { display: grid; grid-template-columns: 14mm 1fr; margin-top: 4mm; font-size: 10pt; }
+  .subject span:first-child { color: var(--g); }
+  .total { display: grid; grid-template-columns: 1fr 1fr 1.6fr; margin-top: 3mm; border: 1px solid var(--k); }
+  .total div { padding: 2mm 3mm; }
+  .total div + div { border-left: 1px solid var(--lg); }
+  .total .lbl { display: block; font-size: 7.5pt; color: var(--g); }
+  .total .v { font-size: 11pt; }
+  .total .grand { background: var(--k); color: #fff; }
+  .total .grand .lbl { color: var(--lg); }
+  .total .grand .v { font-size: 17pt; font-weight: 600; }
+  .lead { margin-top: 2mm; font-size: 8pt; color: var(--g); }
+
+  table.items { width: 100%; border-collapse: collapse; margin-top: 4mm; }
+  table.items th { background: var(--k); color: #fff; font-weight: 500; font-size: 8pt; padding: 1.5mm 2mm; }
+  table.items td { border-bottom: 1px solid var(--lg); padding: 1mm 2mm; font-size: 8.5pt; }
+  table.items tr { break-inside: avoid; }
+  table.items thead { display: table-header-group; }
+  .c-qty { width: 16mm; text-align: center; }
+  .c-unit, .c-amt { width: 27mm; text-align: right; }
+  tr.sec td { background: var(--pg); font-weight: 700; font-size: 8pt; }
+  tr.base td:first-child { font-weight: 500; }
+  tr.disc td { color: var(--k); }
+
+  .breakdown { display: flex; justify-content: flex-end; margin-top: 3mm; }
+  .breakdown table { border-collapse: collapse; width: 82mm; }
+  .breakdown th, .breakdown td { padding: .8mm 2mm; font-size: 8.5pt; border-bottom: 1px solid var(--lg); }
+  .breakdown th { text-align: left; font-weight: 400; color: var(--g); }
+  .breakdown td { text-align: right; }
+  .breakdown tr.sum th, .breakdown tr.sum td { color: var(--k); font-weight: 700; border-bottom: 2px solid var(--k); }
+
+  .deliv { margin-top: 3mm; display: grid; grid-template-columns: 18mm 1fr; row-gap: 1mm; font-size: 8.5pt; }
+  .deliv span:nth-child(odd) { color: var(--g); }
+  .notes { margin-top: 4mm; border: 1px solid var(--lg); padding: 3mm 4mm; font-size: 8pt; line-height: 1.6; break-inside: avoid; }
+  .notes h2 { font-size: 8.5pt; font-weight: 700; margin-bottom: 1mm; }
+  .notes li { list-style: none; padding-left: 1em; text-indent: -1em; }
+  footer { margin-top: auto; padding-top: 5mm; display: flex; justify-content: space-between; font-size: 7.5pt; color: var(--g); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <div><h1>見積書</h1><div class="en">QUOTATION</div></div>
+    <img src="logo.svg" alt="YADOKARI">
+  </header>
+
+  <section class="top">
+    <div>
+      <div class="to-name" id="toName"></div>
+      <div class="to-addr" id="toAddr"></div>
+    </div>
+    <div>
+      <table class="meta">
+        <tr><th>見積日</th><td class="num" id="issueDate"></td></tr>
+        <tr><th>見積書番号</th><td class="num" id="quoteNo"></td></tr>
+        <tr><th>有効期限</th><td class="num" id="validUntil"></td></tr>
+      </table>
+      <div class="from">
+        <div class="seal">角印<br>（要確認）</div>
+        <b>YADOKARI株式会社</b><br>
+        担当：<span id="staff"></span><br>
+        〒（要確認）<br>
+        住所（要確認）<br>
+        TEL（要確認）
+      </div>
+    </div>
+  </section>
+
+  <div class="subject"><span>件名</span><span id="subject"></span></div>
+  <div class="total">
+    <div><span class="lbl">小計（税抜）</span><span class="v num" id="tSub"></span></div>
+    <div><span class="lbl">消費税（10%）</span><span class="v num" id="tTax"></span></div>
+    <div class="grand"><span class="lbl">お見積金額（税込）</span><span class="v num" id="tAll"></span></div>
+  </div>
+  <p class="lead">下記のとおりお見積り申し上げます。</p>
+
+  <table class="items">
+    <thead><tr><th>摘要</th><th class="c-qty">数量</th><th class="c-unit">単価</th><th class="c-amt">明細金額</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="breakdown">
+    <table>
+      <tr><th>10%対象（税抜）</th><td class="num" id="bBase"></td></tr>
+      <tr><th>10%消費税</th><td class="num" id="bTax"></td></tr>
+      <tr class="sum"><th>合計（税込）</th><td class="num" id="bAll"></td></tr>
+    </table>
+  </div>
+
+  <div class="deliv">
+    <span>納品期限</span><span id="dueDate"></span>
+    <span>納品場所</span><span id="place"></span>
+  </div>
+
+  <div class="notes">
+    <h2>備考</h2>
+    <ul>
+      <li>【見積り有効期限】30日間</li>
+      <li>【支払いサイト】（要確認）</li>
+      <li>【納期】（要確認）※納期に関しましては、前後する可能性がございます。</li>
+      <li>・車庫証明、印鑑証明等車検取得に関わる書類の取得はお客様にご準備をいただきます。</li>
+      <li>・敷地に障害物がある・進入路や敷地形状が事前確認のものと異なるなどの場合、搬入ができないことや、本見積もり外に別途費用がかかる可能性があります。</li>
+      <li>・現地での給排水費用は含まれておりません。</li>
+    </ul>
+  </div>
+
+  <footer><span>YADOKARI株式会社</span><span>1 / 1</span></footer>
+</div>
+
+<script>
+// 見積もりシミュレーターの buildQuoteData() と同じ形（＋正式な見積書で新しく要るもの）。値はダミー
+const q = {
+  createdAt: '2026-10-28T10:00:00+09:00',
+  customerName: 'サンプル株式会社',
+  staffName: '山田 太郎',
+  area: '関東',
+  sections: [
+    { title: 'ROADIE', key: 'roadie', lines: [
+      { name: '【ベース】ROADIE 7.2m｜標準', val: 10250000, cls: 'base' },
+      { name: 'エアコン本体', val: 280000 },
+      { name: '給湯器本体', val: 110000 },
+      { name: '外部照明', val: 40000 },
+    ]},
+    { title: '配送・諸経費', lines: [
+      { name: '配送費用（200km以内）', val: 260000 },
+      { name: '諸経費（関東）', val: 50000 },
+      { name: '仲介手数料（売主）', val: 99999, internalOnly: true },  // 社内向け：表示されないことの確認用
+    ]},
+  ],
+  discount: 190000,
+  totalPre: 10800000,
+  totalTax: 11880000,  // シミュレーターでは「税込の合計」が入っている
+  // ↓ ここから下はシミュレーターに今は無い（正式な見積書で新しく要る）
+  quoteNo: 'Q-0000000000',
+  validUntil: '2026-11-27',
+  subject: 'ROADIE 7.2m 1台（サンプル）',
+  customerAddress: '〒000-0000 東京都サンプル区サンプル町1-2-3',
+  dueDate: '（要確認）',
+  deliveryPlace: '（要確認）',
+};
+
+const yen = n => n.toLocaleString('ja-JP');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ymd = iso => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const set = (id, html) => { document.getElementById(id).innerHTML = html; };
+
+const tax = q.totalTax - q.totalPre;
+set('toName', `${esc(q.customerName)}<small>御中</small>`);
+set('toAddr', esc(q.customerAddress || ''));
+set('issueDate', ymd(q.createdAt));
+set('quoteNo', esc(q.quoteNo));
+set('validUntil', esc(q.validUntil));
+set('staff', esc(q.staffName));
+set('subject', esc(q.subject));
+set('tSub', yen(q.totalPre) + '円');
+set('tTax', yen(tax) + '円');
+set('tAll', yen(q.totalTax) + '円');
+set('bBase', yen(q.totalPre) + '円');
+set('bTax', yen(tax) + '円');
+set('bAll', yen(q.totalTax) + '円');
+set('dueDate', esc(q.dueDate));
+set('place', esc(q.deliveryPlace));
+
+// 行名の末尾「 ×N台」から数量を取り出す（シミュレーターの ql() の書き方）。無ければ 1式
+const row = (name, qty, unit, amt, cls = '') =>
+  `<tr class="${cls}"><td>${esc(name)}</td><td class="c-qty">${qty}</td><td class="c-unit num">${unit}</td><td class="c-amt num">${amt}</td></tr>`;
+let html = '';
+q.sections.forEach(sec => {
+  const lines = sec.lines.filter(l => !l.internalOnly);
+  if (!lines.length) return;
+  html += `<tr class="sec"><td colspan="4">▼${esc(sec.title)}</td></tr>`;
+  lines.forEach(l => {
+    const m = l.name.match(/^(.*?)\s*×(\d+)台$/);
+    const n = m ? +m[2] : 1;
+    html += row((m ? m[1] : l.name).replace(/^【ベース】/, ''), m ? `${n}台` : '1式', yen(Math.round(l.val / n)), yen(l.val), l.cls || '');
+  });
+});
+if (q.discount > 0) html += row('お値引き', '1式', '−' + yen(q.discount), '−' + yen(q.discount), 'disc');
+set('rows', html);
+
+// 自己チェック：明細の合計−値引き＝税抜合計
+const sum = q.sections.flatMap(s => s.lines).filter(l => !l.internalOnly).reduce((a, l) => a + l.val, 0) - q.discount;
+console.assert(sum === q.totalPre, '明細の合計と税抜合計が合いません', sum, q.totalPre);
+</script>
+</body>
+</html>

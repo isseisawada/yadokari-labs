@@ -396,3 +396,11 @@ python3 submit_expenses.py --month 8
   - 法人契約の GO BUSINESS なら立替自体が不要（会社に請求書。利用料5%）
 - カード明細のスクショは「立替の一覧」として使う：明細にあって領収書が無いものを Claude が「足りないものリスト」にして返す
 - 最後に freee（スマホのブラウザ/アプリ）で内容を確認して「申請」を押す
+
+## Google ドライブの保存先（2026年11月〜）
+
+- `マイドライブ/経費精算/YYYYMM`（例: `経費精算/202610`）。親フォルダID `1A0ssaoV1GOoLaz9SBISkePzuLFgtaZB-`
+  - 202610: `16ZGW85KFZve1yJagrW3y-AnFCfo0TGdq` / 202611: `1VGtmFv8aXXTaKSY_2X3Up5pqolzLH73l`
+- 翌月分のフォルダは定期タスク「経費精算フォルダ作成（翌月分）」（trig_01CFQXYXMejfsKPeSdMX81tF、毎月25日 10:17 JST）が作る
+  - Google ドライブのコネクタを claude.ai の定期タスク画面で追加しないと動かない（クラウドのセッションからは付けられなかった）
+- Mac の Chrome で取得した領収書は Drive for desktop 経由でこのフォルダに保存 → クラウドの Claude が Drive コネクタで読む

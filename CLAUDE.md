@@ -372,6 +372,7 @@ python3 submit_expenses.py --month 8
   Apple の請求は NewsPicks とは限らない → Apple の領収書メール/購入履歴で品目を確認する。ChatGPT Plus は OpenAI と同じく通信費
   どれも領収書メールは来ない（OpenAI は「account has been funded」通知だけ）→ Bルートで各管理画面から領収書PDFを保存する
   - カード明細のスクショの黒塗りは「ドル払いの確認に関係ない行」の意味のことがある（10月: 黒塗りの GO 10/3・10/6 も領収書は届いた）。黒塗り＝経費外とは決めつけない
+  - **澤田さんが発行・送付した領収書は全部経費**。「これは経費ですか？」と聞き直さない（2026-11 指摘）。聞くのは Amazon の書籍以外など、ルールで決まっていないものだけ
   - カード明細画像は `inputs_2026MM/supplements/card_<サービス>_<MMDD>.jpg` で保存し、overrides.json の `sub_receipt_paths` に指定
 
 ## スマホだけで完結する運用（2026年11月〜・Mac は使わない）

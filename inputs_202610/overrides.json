@@ -126,5 +126,29 @@
    "external": true
   },
   "_source": "カレンダー 10/28「小菅村視察+松崎町長+北山さん」"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 08"
+  },
+  "set": {
+   "participants": [
+    "かもだふなのり"
+   ],
+   "external": true
+  },
+  "_source": "カレンダー 10/6 18:00-22:00「船典さん」（名前は澤田さん確認）"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 52"
+  },
+  "set": {
+   "participants": [
+    "じゃんうぃるだばんてぃす"
+   ],
+   "external": true
+  },
+  "_source": "カレンダー 10/29 17:30-20:30「ダバ@逗子」（名前は澤田さん確認）"
  }
 ]

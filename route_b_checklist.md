@@ -11,18 +11,12 @@ Mac の Claude アプリ（Claude in Chrome が使える状態）で、次のよ
 - 立替は **Visa 5426** のみ。会社カード（Visa 2240 など）の支払いは保存しない
 - 保存が終わったら `git add inputs_2026MM && git commit && git push` → クラウドの Claude が merge → ドライラン
 
+> **2026年11月分〜**: OpenAI・Anthropic・X・Render・Neon・Railway・GitHub・Google Cloud は会社カード払いになったので対象外（取得しない）
+
 ## 直接 PDF を保存するもの
 
 | サービス | 入口 | やること | 2026年10月のカード明細 |
 |---|---|---|---|
-| OpenAI | https://platform.openai.com/settings/organization/billing/history | Billing history から対象月の Invoice/Receipt PDF をダウンロード | 10/10 ¥957, 10/14 ¥958, 10/16 ¥906, 10/29 ¥935 |
-| Anthropic | https://platform.claude.com/settings/billing | Invoice history（メールでも届く。Aルートで取り込み済みなら不要） | 取り込み済み（4件） |
-| X Developer | https://console.x.com/ | Billing → Invoices/Receipts の PDF | 10/20 ¥1,643 |
-| Render | https://dashboard.render.com/billing | Invoices の PDF | 10/2 ¥1,145 |
-| Neon | https://console.neon.tech/ → Billing | Invoices の PDF | 10/1 ¥114 |
-| Railway | https://railway.com/account/billing | 請求があれば PDF（無料なら不要） | 明細になし |
-| GitHub | https://github.com/settings/billing | Payment history の Receipt（無料なら不要） | 明細になし |
-| Google Cloud | https://bit.ly/4eaWi2i | お支払い → ドキュメント（前払いの領収書）。¥0 の月次請求書は不要 | |
 | モバイルSuica | https://bit.ly/4i1725K （JRE ID: everlybrothers@） | 会員メニュー → SF（電子マネー）利用履歴 → 対象月を表示して PDF 保存 → Dropbox `経費関連/YYYYMM/` と `inputs_2026MM/suica/` | |
 | Apple（ChatGPT Plus・NewsPicks） | https://apple.co/4hDHtWW （reportaproblem.apple.com） | 購入履歴から対象月の領収書を表示 → PDF 保存。品目を確認（10/8 ¥3,000 は ChatGPT Plus） | 10/8 ¥3,000 |
 | Amazon（適格請求書） | https://amzn.to/4jDdnpb （everlybrothers@） | 注文履歴 → 領収書/購入明細書（適格請求書）を PDF 保存。**書籍のみ**。書籍以外は澤田さんに確認 | |

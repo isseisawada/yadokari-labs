@@ -1,17 +1,61 @@
 [
  {
-  "_comment": "10月分。Anthropic は Visa 5426（立替）の4件のみ。金額はカード明細の円額（2026-11-01 澤田さん提供の明細画像）。2240（会社カード）の4件は除外済み"
+  "_comment": "10月分。Anthropic は Visa 5426（立替）の4件のみ。金額はカード明細の円額（2026-11-01 澤田さん提供の明細画像）。2240（会社カード）の4件は除外済み。Apple 10/8 ¥3,000 は ChatGPT Plus（Apple のアプリ内課金）→ 領収書が揃ったら vendor=Apple のまま account=通信費・description=ChatGPT Plus 2026年10月分利用料 で追加"
  },
- {"match": {"receipt_path": "Receipt-2586-1867-4190"},
-  "set": {"date": "2026-10-01", "vendor": "Anthropic", "amount": 1812, "account": "通信費",
-          "sub_receipt_paths": ["inputs_202610/supplements/card_neon_anthropic_1001.jpg"]}},
- {"match": {"receipt_path": "Receipt-2578-3404-7245"},
-  "set": {"date": "2026-10-03", "vendor": "Anthropic", "amount": 1815, "account": "通信費",
-          "sub_receipt_paths": ["inputs_202610/supplements/card_render_1002_anthropic_1004.jpg"]}},
- {"match": {"receipt_path": "Receipt-2378-3932-4309"},
-  "set": {"date": "2026-10-06", "vendor": "Anthropic", "amount": 1815, "account": "通信費",
-          "sub_receipt_paths": ["inputs_202610/supplements/card_anthropic_1006_apple_1008.jpg"]}},
- {"match": {"receipt_path": "Receipt-2053-0817-6563"},
-  "set": {"date": "2026-10-23", "vendor": "Anthropic", "amount": 24051, "account": "通信費",
-          "sub_receipt_paths": ["inputs_202610/supplements/card_anthropic_1023.jpg"]}}
+ {
+  "match": {
+   "receipt_path": "Receipt-2586-1867-4190"
+  },
+  "set": {
+   "date": "2026-10-01",
+   "vendor": "Anthropic",
+   "amount": 1812,
+   "account": "通信費",
+   "sub_receipt_paths": [
+    "inputs_202610/supplements/card_neon_anthropic_1001.jpg"
+   ]
+  }
+ },
+ {
+  "match": {
+   "receipt_path": "Receipt-2578-3404-7245"
+  },
+  "set": {
+   "date": "2026-10-03",
+   "vendor": "Anthropic",
+   "amount": 1815,
+   "account": "通信費",
+   "sub_receipt_paths": [
+    "inputs_202610/supplements/card_render_1002_anthropic_1004.jpg"
+   ]
+  }
+ },
+ {
+  "match": {
+   "receipt_path": "Receipt-2378-3932-4309"
+  },
+  "set": {
+   "date": "2026-10-06",
+   "vendor": "Anthropic",
+   "amount": 1815,
+   "account": "通信費",
+   "sub_receipt_paths": [
+    "inputs_202610/supplements/card_anthropic_1006_apple_1008.jpg"
+   ]
+  }
+ },
+ {
+  "match": {
+   "receipt_path": "Receipt-2053-0817-6563"
+  },
+  "set": {
+   "date": "2026-10-23",
+   "vendor": "Anthropic",
+   "amount": 24051,
+   "account": "通信費",
+   "sub_receipt_paths": [
+    "inputs_202610/supplements/card_anthropic_1023.jpg"
+   ]
+  }
+ }
 ]

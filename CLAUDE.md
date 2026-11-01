@@ -368,7 +368,8 @@ python3 submit_expenses.py --month 8
   サイトで「領収書を発行」すると領収書メールが届く。なので Bルート（Mac の Chrome）で発行依頼 → 届いたメールを Aルートで取り込む
 - サイトで直接PDFを保存するもの（OpenAI・Amazon の適格請求書・Google Cloud の前払い 等）は Bルートで保存まで行う
 - 対象アカウント: JR系（モバイルSuica・えきねっと・EX）と Amazon は everlybrothers@（JRE ID）。Amazon は書籍なら経費、それ以外で迷うものは澤田さんに確認
-- **有料で立替になっているサービス（2026年10月のカード明細で確認）**: Anthropic・OpenAI（API チャージ、月に数回）・X Developer Platform・Render・Neon・Apple（NewsPicks）。
+- **有料で立替になっているサービス（2026年10月のカード明細で確認）**: Anthropic・OpenAI（API チャージ、月に数回）・X Developer Platform・Render・Neon・Apple（**ChatGPT Plus**。iPhone のアプリ内課金なので明細は「APPLE COM BILL」¥3,000）。
+  Apple の請求は NewsPicks とは限らない → Apple の領収書メール/購入履歴で品目を確認する。ChatGPT Plus は OpenAI と同じく通信費
   どれも領収書メールは来ない（OpenAI は「account has been funded」通知だけ）→ Bルートで各管理画面から領収書PDFを保存する
   - カード明細のスクショで黒塗りされている行（Netflix・GO・Amazon・駐車場・ドラッグストア等）は経費にしない
   - カード明細画像は `inputs_2026MM/supplements/card_<サービス>_<MMDD>.jpg` で保存し、overrides.json の `sub_receipt_paths` に指定

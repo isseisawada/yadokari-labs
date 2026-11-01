@@ -57,5 +57,23 @@
     "inputs_202610/supplements/card_anthropic_1023.jpg"
    ]
   }
+ },
+ {
+  "match": {
+   "receipt_path": "Apple_ChatGPTPlus"
+  },
+  "set": {
+   "account": "通信費",
+   "description": "ChatGPT Plus 2026年10月分利用料",
+   "sub_receipt_paths": []
+  }
+ },
+ {
+  "match": {
+   "receipt_path": "Apple_NewsPicks"
+  },
+  "set": {
+   "description": "知識獲得のため　NewsPicks 2026年10月分利用料"
+  }
  }
 ]

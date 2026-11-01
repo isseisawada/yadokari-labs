@@ -1,0 +1,170 @@
+[
+  {
+    "date": "2026-10-01",
+    "kind": "suica",
+    "from": "逗子",
+    "to": "恵比寿",
+    "amount": 1034
+  },
+  {
+    "date": "2026-10-01",
+    "kind": "suica",
+    "from": "恵比寿",
+    "to": "逗子",
+    "amount": 1034
+  },
+  {
+    "date": "2026-10-02",
+    "kind": "suica",
+    "from": "逗子葉山",
+    "to": "京急横浜",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-02",
+    "kind": "suica",
+    "from": "相鉄横浜",
+    "to": "星川",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-05",
+    "kind": "suica",
+    "from": "逗子",
+    "to": "逗子",
+    "amount": 160
+  },
+  {
+    "date": "2026-10-05",
+    "kind": "suica",
+    "from": "逗子",
+    "to": "東京",
+    "amount": 1034
+  },
+  {
+    "date": "2026-10-05",
+    "kind": "suica",
+    "from": "東京",
+    "to": "逗子",
+    "amount": 1034
+  },
+  {
+    "date": "2026-10-06",
+    "kind": "suica",
+    "from": "逗子葉山",
+    "to": "京急横浜",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-06",
+    "kind": "suica",
+    "from": "相鉄横浜",
+    "to": "星川",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-06",
+    "kind": "suica",
+    "from": "日ノ出町",
+    "to": "逗子葉山",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-09",
+    "kind": "suica",
+    "from": "逗子葉山",
+    "to": "京急横浜",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-09",
+    "kind": "suica",
+    "from": "相鉄横浜",
+    "to": "星川",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-09",
+    "kind": "suica",
+    "from": "星川",
+    "to": "相鉄横浜",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-09",
+    "kind": "suica",
+    "from": "横浜",
+    "to": "逗子",
+    "amount": 440
+  },
+  {
+    "date": "2026-10-16",
+    "kind": "suica",
+    "from": "逗子葉山",
+    "to": "京急横浜",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-16",
+    "kind": "suica",
+    "from": "相鉄横浜",
+    "to": "星川",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-16",
+    "kind": "suica",
+    "from": "星川",
+    "to": "相鉄横浜",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-16",
+    "kind": "suica",
+    "from": "京急横浜",
+    "to": "逗子葉山",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-19",
+    "kind": "suica",
+    "from": "逗子",
+    "to": "東京",
+    "amount": 1034
+  },
+  {
+    "date": "2026-10-19",
+    "kind": "suica",
+    "from": "東京",
+    "to": "逗子",
+    "amount": 1034
+  },
+  {
+    "date": "2026-10-30",
+    "kind": "suica",
+    "from": "逗子葉山",
+    "to": "京急横浜",
+    "amount": 347
+  },
+  {
+    "date": "2026-10-30",
+    "kind": "suica",
+    "from": "相鉄横浜",
+    "to": "星川",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-30",
+    "kind": "suica",
+    "from": "星川",
+    "to": "相鉄横浜",
+    "amount": 188
+  },
+  {
+    "date": "2026-10-30",
+    "kind": "suica",
+    "from": "京急横浜",
+    "to": "逗子葉山",
+    "amount": 347
+  }
+]

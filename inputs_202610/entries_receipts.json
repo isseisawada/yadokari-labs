@@ -1,0 +1,265 @@
+[
+  {
+    "date": "2026-10-01",
+    "vendor": "note株式会社",
+    "amount": 1000,
+    "kind": "receipt",
+    "account": "雑費",
+    "description": "note 月刊谷尻誠 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "T3011001071811",
+    "receipt_path": "inputs_202610/web_receipts/note_632bdebaf84f1a2b000f757197142a3e.pdf"
+  },
+  {
+    "date": "2026-10-01",
+    "vendor": "Neon",
+    "amount": 114,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "Neon 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Neon_Invoice-QHAXUT-00002.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_neon_anthropic_1001.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-01",
+    "vendor": "株式会社JR東日本ビルディング STATION WORK",
+    "amount": 2640,
+    "kind": "receipt",
+    "account": "会議費",
+    "description": "",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/receiptPdf_2026100109063336.pdf"
+  },
+  {
+    "date": "2026-10-02",
+    "vendor": "Render",
+    "amount": 1145,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "Render 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Render_Invoice-BJKKZC5A-0002.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_render_1002_anthropic_1004.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-05",
+    "vendor": "株式会社JR東日本ビルディング STATION WORK",
+    "amount": 1980,
+    "kind": "receipt",
+    "account": "会議費",
+    "description": "",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/receiptPdf_2026100509044243.pdf"
+  },
+  {
+    "date": "2026-10-08",
+    "vendor": "Apple（ChatGPT Plus）",
+    "amount": 3000,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "ChatGPT Plus 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Apple_ChatGPTPlus_20261008.pdf"
+  },
+  {
+    "date": "2026-10-10",
+    "vendor": "OpenAI",
+    "amount": 957,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "OpenAI API 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/OpenAI_Receipt-2627-1082-2558.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_openai_1010.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-14",
+    "vendor": "OpenAI",
+    "amount": 958,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "OpenAI API 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/OpenAI_Receipt-2825-9350-3255.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_openai_1014.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-16",
+    "vendor": "OpenAI",
+    "amount": 906,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "OpenAI API 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/OpenAI_Receipt-2104-5287-7346.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_openai_1016.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-20",
+    "vendor": "X Developer Platform",
+    "amount": 1643,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "X Developer Platform 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/XDeveloper_Receipt-2394-4755.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_x_1020.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-24",
+    "vendor": "Apple（NewsPicks）",
+    "amount": 1400,
+    "kind": "receipt",
+    "account": "雑費",
+    "description": "NewsPicks 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Apple_NewsPicks_20261024.pdf"
+  },
+  {
+    "date": "2026-10-25",
+    "vendor": "中日本高速道路株式会社 八王子料金所",
+    "amount": 940,
+    "kind": "receipt",
+    "account": "高速・有料道路料金",
+    "description": "",
+    "participants": [],
+    "invoice_number": "T4180001056169",
+    "receipt_path": "inputs_202610/receipts/IMG_0845.JPG"
+  },
+  {
+    "date": "2026-10-29",
+    "vendor": "OpenAI",
+    "amount": 935,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "OpenAI API 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/OpenAI_Receipt-2452-1097-5666.pdf",
+    "sub_receipt_paths": [
+      "inputs_202610/supplements/card_openai_1029.jpg"
+    ]
+  },
+  {
+    "date": "2026-10-02",
+    "vendor": "GO株式会社",
+    "amount": 3490,
+    "kind": "receipt",
+    "account": "交通費（タクシー等）",
+    "description": "タクシー利用",
+    "participants": [],
+    "invoice_number": "T2011501015896",
+    "receipt_path": "inputs_202610/web_receipts/GO領収書_20261002_3490.png"
+  },
+  {
+    "date": "2026-10-03",
+    "vendor": "GO株式会社",
+    "amount": 16720,
+    "kind": "receipt",
+    "account": "交通費（タクシー等）",
+    "description": "タクシー利用",
+    "participants": [],
+    "invoice_number": "T2011501015896",
+    "receipt_path": "inputs_202610/web_receipts/GO領収書_20261003_16720.png"
+  },
+  {
+    "date": "2026-10-06",
+    "vendor": "GO株式会社",
+    "amount": 2900,
+    "kind": "receipt",
+    "account": "交通費（タクシー等）",
+    "description": "タクシー利用",
+    "participants": [],
+    "invoice_number": "T2011501015896",
+    "receipt_path": "inputs_202610/web_receipts/GO領収書_20261006_2900.png"
+  },
+  {
+    "date": "2026-10-23",
+    "vendor": "GO株式会社",
+    "amount": 1300,
+    "kind": "receipt",
+    "account": "交通費（タクシー等）",
+    "description": "タクシー利用",
+    "participants": [],
+    "invoice_number": "T2011501015896",
+    "receipt_path": "inputs_202610/web_receipts/GO領収書_20261023_1300.png"
+  },
+  {
+    "date": "2026-10-23",
+    "vendor": "GO株式会社",
+    "amount": 1300,
+    "kind": "receipt",
+    "account": "交通費（タクシー等）",
+    "description": "タクシー利用",
+    "participants": [],
+    "invoice_number": "T2011501015896",
+    "receipt_path": "inputs_202610/web_receipts/GO領収書_20261023_1300_2.png"
+  },
+  {
+    "date": "2026-10-01",
+    "vendor": "Anthropic",
+    "amount": 0,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "Anthropic 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Receipt-2586-1867-4190.pdf"
+  },
+  {
+    "date": "2026-10-03",
+    "vendor": "Anthropic",
+    "amount": 0,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "Anthropic 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Receipt-2578-3404-7245.pdf"
+  },
+  {
+    "date": "2026-10-06",
+    "vendor": "Anthropic",
+    "amount": 0,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "Anthropic 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Receipt-2378-3932-4309.pdf"
+  },
+  {
+    "date": "2026-10-23",
+    "vendor": "Anthropic",
+    "amount": 0,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "Anthropic 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202610/web_receipts/Receipt-2053-0817-6563.pdf"
+  }
+]

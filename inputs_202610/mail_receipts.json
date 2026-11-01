@@ -1,0 +1,82 @@
+[
+ {
+  "message_id": "1a167fcce865208c",
+  "date": "2026-10-23",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2053-0817-6563",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2053-0817-6563.pdf"
+  ]
+ },
+ {
+  "message_id": "1a0f6702c10deeed",
+  "date": "2026-10-01",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2586-1867-4190",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2586-1867-4190.pdf"
+  ]
+ },
+ {
+  "message_id": "1a10510e9923c61c",
+  "date": "2026-10-04",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2578-3404-7245",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2578-3404-7245.pdf"
+  ]
+ },
+ {
+  "message_id": "1a1133bcb8ad1474",
+  "date": "2026-10-06",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2378-3932-4309",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2378-3932-4309.pdf"
+  ]
+ },
+ {
+  "message_id": "1a1332e99f439488",
+  "date": "2026-10-13",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2554-5767-3444",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2554-5767-3444.pdf"
+  ]
+ },
+ {
+  "message_id": "1a167360adfcf93a",
+  "date": "2026-10-23",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2257-3355-2165",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2257-3355-2165.pdf"
+  ]
+ },
+ {
+  "message_id": "1a167e6a05a34b1f",
+  "date": "2026-10-23",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2179-2383-3704",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2179-2383-3704.pdf"
+  ]
+ },
+ {
+  "message_id": "1a167ec42e8df454",
+  "date": "2026-10-23",
+  "from": "invoice+statements@mail.anthropic.com",
+  "subject": "Your receipt from Anthropic, PBC #2928-8766-9539",
+  "files": [
+   "inputs_202610/web_receipts/Receipt-2928-8766-9539.pdf"
+  ]
+ },
+ {
+  "message_id": "1a0fafb6a5945d54",
+  "date": "2026-10-01",
+  "from": "payments-noreply@google.com",
+  "subject": "Google Cloud Platform & APIs: 011CDD-A68321-AD4BDB の請求書の用意ができました",
+  "files": [],
+  "note": "9月分の請求書だが ¥0 のため除外"
+ }
+]

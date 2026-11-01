@@ -349,3 +349,20 @@ python3 submit_expenses.py --month 8
 
 カレンダーから入れた名前も多くが差し替えられた（金沢玉寿司・プレジデント・悟空 等）。
 カレンダーは「その日に誰と会っていたか」の手がかりにはなるが、どの領収書が誰の分かまでは決められない。
+
+## Aルート：メールで届く領収書の自動取り込み（2026年11月〜）
+
+月初に Claude（クラウド）が Gmail コネクタで前月分の領収書メールを探し、添付PDFを `inputs_2026MM/web_receipts/` に保存する。
+
+- 添付を直接ダウンロードする機能はないので、`get_message(messageFormat=RAW)` でメール全体を取得 → 結果のJSONファイルを
+  `python3 save_mail_receipts.py --month M <JSON...>` に渡すと添付PDFを取り出して保存する
+  - 同じ内容のファイル・取り込み済みのメールは保存しない（`inputs_2026MM/mail_receipts.json` に記録）
+  - Stripe 系（Anthropic 等）は Invoice と Receipt が両方付くので Receipt だけ残す
+- 検索の目安: `after:YYYY/MM/01 before:YYYY/MM+1/03 from:(invoice@mail.anthropic.com OR sride.co.jp OR stationwork.jp OR payments-noreply@google.com OR apple.com OR note.jp OR dropbox.com OR booking.com OR goinc.jp)` と、件名 `領収書 OR receipt OR 請求書 OR invoice`
+- 注意（2026年10月分で確認）:
+  - STATION WORK の領収書メールは利用の翌月に届くことがある（10/3 着が 9/9 利用分）→ 前月申請済みのものは除外
+  - Google Cloud の月次請求書は ¥0 のことがある → 除外
+  - Anthropic は個人Org（API オートチャージ）と組織Org（Max プラン・追加利用）の2種類、カードも 5426 / 2240 の2枚 → どちらが立替か要確認
+  - ドル払いの金額はカード明細の円額に合わせる（「ドル払い」の節）
+- メールで届かないもの（OpenAI・Amazon・モバイルSuica・えきねっと/EX・Google Cloud の前払い）は Bルート（Mac の Chrome 操作）
+- 対象アカウント: JR系（モバイルSuica・えきねっと・EX）と Amazon は everlybrothers@（JRE ID）。Amazon は書籍なら経費、それ以外で迷うものは澤田さんに確認

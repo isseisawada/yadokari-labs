@@ -373,3 +373,22 @@ python3 submit_expenses.py --month 8
   どれも領収書メールは来ない（OpenAI は「account has been funded」通知だけ）→ Bルートで各管理画面から領収書PDFを保存する
   - カード明細のスクショで黒塗りされている行（Netflix・GO・Amazon・駐車場・ドラッグストア等）は経費にしない
   - カード明細画像は `inputs_2026MM/supplements/card_<サービス>_<MMDD>.jpg` で保存し、overrides.json の `sub_receipt_paths` に指定
+
+## スマホだけで完結する運用（2026年11月〜・Mac は使わない）
+
+**入口は「Gmail」と「Claude のチャット（スマホアプリ）」の2つだけ。** クラウドの Claude がそこから集めて freee に下書き登録する。
+
+| 種類 | スマホでやること | Claude が受け取る場所 |
+|---|---|---|
+| 自動でメールが来るもの（Anthropic など） | 何もしない | Gmail（Aルート） |
+| 請求メールを設定できるもの（Render / Neon / X / Railway / GitHub / OpenAI） | 最初の1回だけ、各サービスの Billing 設定で請求書・領収書のメール送信先を sawada@yadokari.net にする（できるかはサービスごとに要確認） | Gmail |
+| サイトやアプリで「領収書を発行」するとメールが来るもの（GO / S.RIDE / note / STATION WORK / Booking / Dropbox / えきねっと・EX） | スマホのアプリかブラウザで発行ボタンを押す | Gmail |
+| メールが来ないもの（OpenAI の領収書 / Amazon の適格請求書 / Google Cloud 前払い / Apple の購入履歴） | スマホで PDF 保存かスクショ → **このチャットに添付**（または件名「経費」で自分宛メール） | チャット / Gmail |
+| Suica 利用履歴 | モバイルSuica アプリの履歴をスクショ → チャットに添付 | チャット |
+| 紙の領収書 | 写真 → チャットに添付 | チャット |
+| ドル払いの円額 | カード明細アプリの該当行をスクショ → チャットに添付（経費でない行は黒塗りで OK） | チャット |
+
+- チャットに添付されたファイルは Claude が `inputs_2026MM/` の該当フォルダ（web_receipts / receipts / suica / supplements）に保存して git に残す
+- 自分宛メールは `from:sawada@yadokari.net subject:経費` で Aルートが拾う
+- カード明細のスクショは「立替の一覧」として使う：明細にあって領収書が無いものを Claude が「足りないものリスト」にして返す
+- 最後に freee（スマホのブラウザ/アプリ）で内容を確認して「申請」を押す

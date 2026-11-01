@@ -385,7 +385,7 @@ python3 submit_expenses.py --month 8
 | 請求メールを設定できるもの（Render / Neon / X / Railway / GitHub / OpenAI） | 最初の1回だけ、各サービスの Billing 設定で請求書・領収書のメール送信先を sawada@yadokari.net にする（できるかはサービスごとに要確認） | Gmail |
 | サイトやアプリで「領収書を発行」するとメールが来るもの（GO / S.RIDE / note / STATION WORK / Booking / Dropbox / えきねっと・EX） | スマホのアプリかブラウザで発行ボタンを押す | Gmail |
 | メールが来ないもの（OpenAI の領収書 / Amazon の適格請求書 / Google Cloud 前払い / Apple の購入履歴） | スマホで PDF 保存かスクショ → **このチャットに添付**（または件名「経費」で自分宛メール） | チャット / Gmail |
-| Suica 利用履歴 | モバイルSuica アプリの履歴をスクショ → チャットに添付 | チャット |
+| Suica 利用履歴 | **Claude が Mac の Chrome でモバイルSuica の Web（JRE ID: everlybrothers@）から利用履歴を取得**。Mac が使えないときだけアプリのスクショ | Drive / チャット |
 | 紙の領収書 | 写真 → チャットに添付 | チャット |
 | ドル払いの円額 | カード明細アプリの該当行をスクショ → チャットに添付（経費でない行は黒塗りで OK） | チャット |
 

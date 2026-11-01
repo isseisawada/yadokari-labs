@@ -22,6 +22,7 @@ Mac の Claude アプリ（Claude in Chrome が使える状態）で、次のよ
 | Railway | https://railway.com/account/billing | 請求があれば PDF（無料なら不要） | 明細になし |
 | GitHub | https://github.com/settings/billing | Payment history の Receipt（無料なら不要） | 明細になし |
 | Google Cloud | https://bit.ly/4eaWi2i | お支払い → ドキュメント（前払いの領収書）。¥0 の月次請求書は不要 | |
+| モバイルSuica | https://bit.ly/4i1725K （JRE ID: everlybrothers@） | 会員メニュー → SF（電子マネー）利用履歴 → 対象月を表示して PDF 保存 → `経費精算/YYYYMM` と `inputs_2026MM/suica/` | |
 | Apple（ChatGPT Plus・NewsPicks） | https://apple.co/4hDHtWW （reportaproblem.apple.com） | 購入履歴から対象月の領収書を表示 → PDF 保存。品目を確認（10/8 ¥3,000 は ChatGPT Plus） | 10/8 ¥3,000 |
 | Amazon（適格請求書） | https://amzn.to/4jDdnpb （everlybrothers@） | 注文履歴 → 領収書/購入明細書（適格請求書）を PDF 保存。**書籍のみ**。書籍以外は澤田さんに確認 | |
 
@@ -30,7 +31,7 @@ Mac の Claude アプリ（Claude in Chrome が使える状態）で、次のよ
 | サービス | 入口 | やること |
 |---|---|---|
 | note | https://bit.ly/4i0FZYk | アカウント → 購入履歴/領収書 → 対象月を発行 |
-| モバイルSuica | https://bit.ly/4i1725K （JRE ID: everlybrothers@） | 利用履歴を表示・印刷（PDF）→ `inputs_2026MM/suica/` へ |
+
 | STATION WORK | https://bit.ly/4AKbfCf | 利用履歴 → 領収書発行（翌月に届くことがある） |
 | 新幹線（EX / えきねっと） | https://bit.ly/47z7sKC （JRE ID: everlybrothers@） | 対象月の乗車分の領収書を発行 |
 | 成田エクスプレス（えきねっと） | えきねっと | 同上 |

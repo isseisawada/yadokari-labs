@@ -575,7 +575,7 @@
     "vendor": "フリューリング（葉山）",
     "amount": 4230,
     "kind": "receipt",
-    "account": "贈答・手土産代",
+    "account": "会議費",
     "description": "",
     "participants": [
       "うえすぎせいた"
@@ -584,7 +584,7 @@
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 40 20.jpg",
     "external": false,
     "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 1 名（金額から人数を推定）"
+    "guess_basis": "初めての店。会議費は社内が多い／直近の打ち合わせ相手で最多（2回）"
   },
   {
     "date": "2026-10-23",

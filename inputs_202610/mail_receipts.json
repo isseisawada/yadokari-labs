@@ -40,36 +40,32 @@
   "date": "2026-10-13",
   "from": "invoice+statements@mail.anthropic.com",
   "subject": "Your receipt from Anthropic, PBC #2554-5767-3444",
-  "files": [
-   "inputs_202610/web_receipts/Receipt-2554-5767-3444.pdf"
-  ]
+  "files": [],
+  "note": "Visa 2240（会社カード）払いのため除外"
  },
  {
   "message_id": "1a167360adfcf93a",
   "date": "2026-10-23",
   "from": "invoice+statements@mail.anthropic.com",
   "subject": "Your receipt from Anthropic, PBC #2257-3355-2165",
-  "files": [
-   "inputs_202610/web_receipts/Receipt-2257-3355-2165.pdf"
-  ]
+  "files": [],
+  "note": "Visa 2240（会社カード）払いのため除外"
  },
  {
   "message_id": "1a167e6a05a34b1f",
   "date": "2026-10-23",
   "from": "invoice+statements@mail.anthropic.com",
   "subject": "Your receipt from Anthropic, PBC #2179-2383-3704",
-  "files": [
-   "inputs_202610/web_receipts/Receipt-2179-2383-3704.pdf"
-  ]
+  "files": [],
+  "note": "Visa 2240（会社カード）払いのため除外"
  },
  {
   "message_id": "1a167ec42e8df454",
   "date": "2026-10-23",
   "from": "invoice+statements@mail.anthropic.com",
   "subject": "Your receipt from Anthropic, PBC #2928-8766-9539",
-  "files": [
-   "inputs_202610/web_receipts/Receipt-2928-8766-9539.pdf"
-  ]
+  "files": [],
+  "note": "Visa 2240（会社カード）払いのため除外"
  },
  {
   "message_id": "1a0fafb6a5945d54",

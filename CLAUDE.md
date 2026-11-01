@@ -362,7 +362,9 @@ python3 submit_expenses.py --month 8
 - 注意（2026年10月分で確認）:
   - STATION WORK の領収書メールは利用の翌月に届くことがある（10/3 着が 9/9 利用分）→ 前月申請済みのものは除外
   - Google Cloud の月次請求書は ¥0 のことがある → 除外
-  - Anthropic は個人Org（API オートチャージ）と組織Org（Max プラン・追加利用）の2種類、カードも 5426 / 2240 の2枚 → どちらが立替か要確認
+  - Anthropic はカードが2枚。**Visa 5426 が立替（経費精算の対象）**、Visa 2240 は会社カードなので対象外（領収書PDFの Payment method で判定）
   - ドル払いの金額はカード明細の円額に合わせる（「ドル払い」の節）
-- メールで届かないもの（OpenAI・Amazon・モバイルSuica・えきねっと/EX・Google Cloud の前払い）は Bルート（Mac の Chrome 操作）
+- **B→A の流れ**：STATION WORK・GO・S.RIDE・note・NewsPicks・Dropbox・Booking・JR系（えきねっと/EX/モバイルSuica）は、
+  サイトで「領収書を発行」すると領収書メールが届く。なので Bルート（Mac の Chrome）で発行依頼 → 届いたメールを Aルートで取り込む
+- サイトで直接PDFを保存するもの（OpenAI・Amazon の適格請求書・Google Cloud の前払い 等）は Bルートで保存まで行う
 - 対象アカウント: JR系（モバイルSuica・えきねっと・EX）と Amazon は everlybrothers@（JRE ID）。Amazon は書籍なら経費、それ以外で迷うものは澤田さんに確認

@@ -401,6 +401,7 @@ python3 submit_expenses.py --month 8
 
 - `マイドライブ/経費精算/YYYYMM`（例: `経費精算/202610`）。親フォルダID `1A0ssaoV1GOoLaz9SBISkePzuLFgtaZB-`
   - 202610: `16ZGW85KFZve1yJagrW3y-AnFCfo0TGdq` / 202611: `1VGtmFv8aXXTaKSY_2X3Up5pqolzLH73l`
-- 翌月分のフォルダは定期タスク「経費精算フォルダ作成（翌月分）」（trig_01CFQXYXMejfsKPeSdMX81tF、毎月25日 10:17 JST）が作る
-  - Google ドライブのコネクタを claude.ai の定期タスク画面で追加しないと動かない（クラウドのセッションからは付けられなかった）
+- **202610〜202907 の月フォルダは作成済み**（2026-11-01）。フォルダは名前で検索すれば見つかる（`parentId = '1A0ssaoV1GOoLaz9SBISkePzuLFgtaZB-' and title = 'YYYYMM'`）
+- 202908 以降用に定期タスク「経費精算フォルダ作成（翌月分）」（trig_01CFQXYXMejfsKPeSdMX81tF、毎月25日 10:17 JST）を**停止状態で**残してある
+  - 2029年7月ごろに有効化する。Google ドライブのコネクタを claude.ai の定期タスク画面で追加しないと動かない
 - Mac の Chrome で取得した領収書は Drive for desktop 経由でこのフォルダに保存 → クラウドの Claude が Drive コネクタで読む

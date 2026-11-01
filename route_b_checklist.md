@@ -31,7 +31,6 @@ Mac の Claude アプリ（Claude in Chrome が使える状態）で、次のよ
 | サービス | 入口 | やること |
 |---|---|---|
 | note | https://bit.ly/4i0FZYk | アカウント → 購入履歴/領収書 → 対象月を発行 |
-
 | STATION WORK | https://bit.ly/4AKbfCf | 利用履歴 → 領収書発行（翌月に届くことがある） |
 | 新幹線（EX / えきねっと） | https://bit.ly/47z7sKC （JRE ID: everlybrothers@） | 対象月の乗車分の領収書を発行 |
 | 成田エクスプレス（えきねっと） | えきねっと | 同上 |

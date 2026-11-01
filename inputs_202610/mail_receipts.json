@@ -83,5 +83,23 @@
   "files": [
    "inputs_202610/web_receipts/GO領収書_20261002_1843.pdf"
   ]
+ },
+ {
+  "message_id": "1a195a2fd6d2fb95",
+  "date": "2026-11-01",
+  "from": "noreply@stationwork.jp",
+  "subject": "【STATION WORK】領収書 兼 明細書送付のご案内",
+  "files": [
+   "inputs_202610/web_receipts/receiptPdf_2026100109063336.pdf"
+  ]
+ },
+ {
+  "message_id": "1a195a6101d66b9e",
+  "date": "2026-11-01",
+  "from": "noreply@stationwork.jp",
+  "subject": "【STATION WORK】領収書 兼 明細書送付のご案内",
+  "files": [
+   "inputs_202610/web_receipts/receiptPdf_2026100509044243.pdf"
+  ]
  }
 ]

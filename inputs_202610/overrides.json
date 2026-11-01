@@ -75,5 +75,56 @@
   "set": {
    "description": "知識獲得のため　NewsPicks 2026年10月分利用料"
   }
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 16"
+  },
+  "set": {
+   "participants": [
+    "ふくいのぶゆき"
+   ],
+   "external": true
+  },
+  "_source": "カレンダー 10/2 19:00-22:00「福井さん」"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 25"
+  },
+  "set": {
+   "participants": [
+    "はやしみつひろ",
+    "うえすぎせいた",
+    "きたもとなおひろ"
+   ],
+   "external": true
+  },
+  "_source": "カレンダー 10/5 17:30「林さん経営アドバイザリー定例@丸の内パレスラウンジ」出席者"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 34"
+  },
+  "set": {
+   "participants": [
+    "すがわらまりか",
+    "えんどうみちこ"
+   ],
+   "external": true
+  },
+  "_source": "カレンダー 10/25 10:00-16:00「菅原様オーナーインタビュー@北杜」"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 03"
+  },
+  "set": {
+   "participants": [
+    "きたやまゆきのり"
+   ],
+   "external": true
+  },
+  "_source": "カレンダー 10/28「小菅村視察+松崎町長+北山さん」"
  }
 ]

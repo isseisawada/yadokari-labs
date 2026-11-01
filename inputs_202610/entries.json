@@ -110,15 +110,11 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた",
-      "かじやまだいき",
-      "うえだようすけ"
+      "ふくいのぶゆき"
     ],
     "invoice_number": "",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 16.jpg",
-    "external": true,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 3 名（金額から人数を推定）"
+    "external": true
   },
   {
     "date": "2026-10-03",
@@ -242,13 +238,13 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた"
+      "はやしみつひろ",
+      "うえすぎせいた",
+      "きたもとなおひろ"
     ],
     "invoice_number": "T9010001026704",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 25.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 1 名（金額から人数を推定）"
+    "external": true
   },
   {
     "date": "2026-10-05",
@@ -706,13 +702,12 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた"
+      "すがわらまりか",
+      "えんどうみちこ"
     ],
     "invoice_number": "",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 34.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 1 名（金額から人数を推定）"
+    "external": true
   },
   {
     "date": "2026-10-27",
@@ -755,13 +750,11 @@
     "account": "贈答・手土産代",
     "description": "",
     "participants": [
-      "うえすぎせいた"
+      "きたやまゆきのり"
     ],
     "invoice_number": "T8090001015015",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 03.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 1 名（金額から人数を推定）"
+    "external": true
   },
   {
     "date": "2026-10-29",

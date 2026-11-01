@@ -205,7 +205,7 @@ def build_description(entry: dict, dec: Decision) -> str:
     # 内容欄のハウススタイル（2026年8月分の実績に合わせる）:
     #   - 店名・ベンダー名は書かない。「何のためか」だけを書く
     #   - 参加者がいれば 全角スペース + 「、」区切りのフルネーム
-    #   例: 「打ち合わせ　うえすぎせいた」「親睦のため　やましたまさき、くどうたろう」「駐車場利用」「消耗品」
+    #   例: 「打ち合わせ　うえすぎせいた」「親睦のため：やましたまさき、くどうたろう」（接待交際費はコロン）「駐車場利用」「消耗品」
     purpose_by_label = {
         "タクシー":            "タクシー利用",
         "駐車場代":            "駐車場利用",
@@ -242,7 +242,9 @@ def build_description(entry: dict, dec: Decision) -> str:
         from predict_meal import clean_names
         participants = clean_names(entry.get("participants") or [], set())
         if participants and not any(p in desc for p in participants):
-            desc = f"{desc}　{'、'.join(participants)}"
+            # 接待交際費は「親睦のため：ふるねーむ、ふるねーむ」（2026年11月 澤田さん指定）
+            sep = "：" if label.startswith("接待交際費") else "　"
+            desc = f"{desc}{sep}{'、'.join(participants)}"
     if entry.get("shareholder"):
         tail = f"株主{entry['shareholder']}親睦のため"
         if tail not in desc:

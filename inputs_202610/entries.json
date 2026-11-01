@@ -45,9 +45,12 @@
     "kind": "receipt",
     "account": "会議費",
     "description": "オフィスブース利用（STATION WORK）",
-    "participants": [],
+    "participants": [
+      "うえすぎせいた"
+    ],
     "invoice_number": "",
-    "receipt_path": "inputs_202610/web_receipts/receiptPdf_2026100109063336.pdf"
+    "receipt_path": "inputs_202610/web_receipts/receiptPdf_2026100109063336.pdf",
+    "external": false
   },
   {
     "date": "2026-10-01",
@@ -160,15 +163,12 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた",
-      "かじやまだいき",
-      "うえだようすけ"
+      "うえだようすけ",
+      "みつぼしあずみ"
     ],
     "invoice_number": "T2010902011802",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 58.jpg",
-    "external": true,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 3 名（金額から人数を推定）"
+    "external": true
   },
   {
     "date": "2026-10-04",
@@ -209,9 +209,12 @@
     "kind": "receipt",
     "account": "会議費",
     "description": "オフィスブース利用（STATION WORK）",
-    "participants": [],
+    "participants": [
+      "くどうしゅん"
+    ],
     "invoice_number": "",
-    "receipt_path": "inputs_202610/web_receipts/receiptPdf_2026100509044243.pdf"
+    "receipt_path": "inputs_202610/web_receipts/receiptPdf_2026100509044243.pdf",
+    "external": true
   },
   {
     "date": "2026-10-05",
@@ -221,14 +224,11 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた",
-      "かじやまだいき"
+      "きたもとなおひろ"
     ],
     "invoice_number": "T3011101042662",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 20.jpg",
-    "external": true,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 2 名（金額から人数を推定）"
+    "external": false
   },
   {
     "date": "2026-10-05",
@@ -236,10 +236,9 @@
     "amount": 6555,
     "kind": "receipt",
     "account": "接待交際費",
-    "description": "",
+    "description": "打ち合わせ：はやしみつひろ、きたもとなおひろ",
     "participants": [
       "はやしみつひろ",
-      "うえすぎせいた",
       "きたもとなおひろ"
     ],
     "invoice_number": "T9010001026704",
@@ -258,9 +257,7 @@
     ],
     "invoice_number": "T8010801003548",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 40 24.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "同じ店の実績7件（直近 2026-04-27・ドトールコーヒーショップ逗子・葉山駅店）"
+    "external": false
   },
   {
     "date": "2026-10-06",
@@ -327,7 +324,8 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "かもだふなのり"
+      "かもだふなのり",
+      "よこたみちる"
     ],
     "invoice_number": "",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 08.jpg",
@@ -381,13 +379,11 @@
     "account": "会議費",
     "description": "",
     "participants": [
-      "かわむらけい"
+      "にしやまるか"
     ],
     "invoice_number": "T6020002050829",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 40 14.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "同じ店の実績4件（直近 2026-05-01・ドトールコーヒーショップ相鉄星川店）"
+    "external": false
   },
   {
     "date": "2026-10-10",
@@ -500,15 +496,11 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた",
-      "かじやまだいき",
-      "うえだようすけ"
+      "きたもとなおひろ"
     ],
     "invoice_number": "",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 40 10.jpg",
-    "external": true,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 3 名（金額から人数を推定）"
+    "external": false
   },
   {
     "date": "2026-10-16",
@@ -518,13 +510,11 @@
     "account": "会議費",
     "description": "",
     "participants": [
-      "かわむらけい"
+      "わたなべりさ"
     ],
     "invoice_number": "T6020002050829",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 40 28.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "同じ店の実績4件（直近 2026-05-01・ドトールコーヒーショップ相鉄星川店）"
+    "external": false
   },
   {
     "date": "2026-10-19",
@@ -562,13 +552,11 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "うえすぎせいた"
+      "いねやまたかのり"
     ],
     "invoice_number": "T3020001083353",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 29.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "初めての店。直近の接待でよく同席した人を 1 名（金額から人数を推定）"
+    "external": true
   },
   {
     "date": "2026-10-22",
@@ -578,13 +566,16 @@
     "account": "会議費",
     "description": "",
     "participants": [
-      "うえすぎせいた"
+      "せきとおる",
+      "なかたこうだい"
     ],
     "invoice_number": "T4810883971815",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 40 20.jpg",
-    "external": false,
-    "guessed": true,
-    "guess_basis": "初めての店。会議費は社内が多い／直近の打ち合わせ相手で最多（2回）"
+    "external": true,
+    "amount_split": [
+      4200,
+      30
+    ]
   },
   {
     "date": "2026-10-23",
@@ -696,7 +687,8 @@
     "account": "接待交際費",
     "description": "",
     "participants": [
-      "すがわらまりか",
+      "さいとうゆうひ",
+      "すずきせ",
       "えんどうみちこ"
     ],
     "invoice_number": "",
@@ -744,7 +736,7 @@
     "account": "贈答・手土産代",
     "description": "",
     "participants": [
-      "きたやまゆきのり"
+      "きたやまゆきとも"
     ],
     "invoice_number": "T8090001015015",
     "receipt_path": "inputs_202610/receipts/写真 2026-11-01 15 39 03.jpg",

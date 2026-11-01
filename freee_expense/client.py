@@ -30,6 +30,7 @@ class ExpenseLine:
     line_template_id: int | None = None  # 明細テンプレート ID（新API形式）
     receipt_ids: list[int] = field(default_factory=list)      # 添付領収書 ID（先頭のみ使用）
     sub_receipt_ids: list[int] = field(default_factory=list)  # 補足資料 ID（Suica一覧など）
+    split_amounts: list[int] = field(default_factory=list)    # 税率ごとに行を分けるときの金額（8%/10%混在）
 
 
 @dataclass
@@ -186,9 +187,12 @@ class FreeeClient:
                 # テンプレート既定の勘定科目を上書きしたい場合
                 if line.account_item_id:
                     eal["account_item_id"] = line.account_item_id
+                eals = [eal]
+                if line.split_amounts and sum(line.split_amounts) == line.amount:
+                    eals = [{**eal, "amount": a} for a in line.split_amounts]
                 purchase_line: dict = {
                     "transaction_date": line.expense_date.isoformat(),
-                    "expense_application_lines": [eal],
+                    "expense_application_lines": eals,
                 }
                 if line.receipt_ids:
                     purchase_line["receipt_id"] = line.receipt_ids[0]

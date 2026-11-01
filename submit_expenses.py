@@ -207,9 +207,10 @@ def build_description(entry: dict, dec: Decision) -> str:
     #   - 参加者がいれば 全角スペース + 「、」区切りのフルネーム
     #   例: 「打ち合わせ　うえすぎせいた」「親睦のため：やましたまさき、くどうたろう」（接待交際費はコロン）「駐車場利用」「消耗品」
     purpose_by_label = {
-        "タクシー":            "タクシー利用",
-        "駐車場代":            "駐車場利用",
-        "高速・有料道路":      "高速道路利用",
+        # 2026年10月分の修正から: 移動系は「目的：手段」
+        "タクシー":            "打ち合わせ：タクシー利用",
+        "駐車場代":            "打ち合わせ：駐車場利用",
+        "高速・有料道路":      "出張：高速道路利用",
         "ガソリン代":          "打ち合わせ",      # 移動目的として「打ち合わせ」と書く運用
         "備品消耗品":          "消耗品",
         "オフィスブース":      "オフィスブース利用（STATION WORK）",
@@ -237,14 +238,28 @@ def build_description(entry: dict, dec: Decision) -> str:
         else:
             desc = purpose_by_label.get(dec.label) or purpose_by_label.get(label) or "打ち合わせ"
 
+    # 2026年10月分で澤田さんが直した書き方（description が先に入っていても揃える）
+    desc = {"タクシー利用": "打ち合わせ：タクシー利用", "駐車場利用": "打ち合わせ：駐車場利用",
+            "高速道路利用": "出張：高速道路利用"}.get(desc, desc)
+    # 通信費（AI・クラウド・開発系）は先頭に「AI関連：」。Dropbox は除く
+    if label == "通信費" and "dropbox" not in (vendor + desc).lower() and not desc.startswith("AI関連："):
+        desc = f"AI関連：{desc}"
+    # 谷尻誠さん（株主）の note 月刊は「株主たにじりまこと親睦のため」+改行+サービス名
+    if "谷尻" in desc and "株主" not in desc:
+        desc = f"株主たにじりまこと親睦のため\n{desc}"
+
     # 参加者フルネームを付与（会議費・接待交際費・贈答）
-    if label.startswith("会議費") or label.startswith("接待交際費") or dec.tid == T_GIFT:
+    if label.startswith("会議費") or label.startswith("接待交際費") or dec.tid == T_GIFT or dec.label == "オフィスブース":
         from predict_meal import clean_names
         participants = clean_names(entry.get("participants") or [], set())
         if participants and not any(p in desc for p in participants):
             # 接待交際費は「親睦のため：ふるねーむ、ふるねーむ」（2026年11月 澤田さん指定）
-            sep = "：" if label.startswith("接待交際費") else "　"
-            desc = f"{desc}{sep}{'、'.join(participants)}"
+            names = '、'.join(participants)
+            if dec.label == "オフィスブース":
+                desc = f"打ち合わせ：{names}　{desc}"
+            else:
+                sep = "：" if label.startswith("接待交際費") else "　"
+                desc = f"{desc}{sep}{names}"
     if entry.get("shareholder"):
         tail = f"株主{entry['shareholder']}親睦のため"
         if tail not in desc:
@@ -302,6 +317,8 @@ def to_line(entry: dict, dec: Decision, receipt_id: int | None, sub_receipt_ids:
         account_item_id=override,
         receipt_ids=[receipt_id] if receipt_id else [],
         sub_receipt_ids=sub_receipt_ids or [],
+        # 8%/10% 混在のレシートは税率ごとに明細行を分ける（例: [4200, 30]）。合計は amount と一致させる
+        split_amounts=[int(a) for a in entry.get("amount_split") or []],
     )
 
 

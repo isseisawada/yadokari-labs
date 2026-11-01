@@ -113,9 +113,6 @@ def _recent(history: list[dict], ref: date) -> list[dict]:
 def predict(entry: dict, history: list[dict] | None = None) -> dict | None:
     """会議費/接待交際費のエントリに対し {participants(ひらがな), external, basis} を返す。対象外なら None。
     実績から名前が取れない場合も、社内名簿の最多の人で必ず埋める（空欄にしない）"""
-    vl = (entry.get("vendor") or "").lower()
-    if "station work" in vl or "jr東日本ビルディング" in vl:
-        return None
     g = _predict_raw(entry, history)
     if g is None and (entry.get("kind") == "suica" or entry.get("account") not in ("会議費", "接待交際費", "贈答・手土産代")):
         return None

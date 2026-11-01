@@ -159,5 +159,184 @@
    "account": "会議費"
   },
   "_source": "澤田さん指定（手土産→会議費）"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 58"
+  },
+  "set": {
+   "participants": [
+    "うえだようすけ",
+    "みつぼしあずみ"
+   ],
+   "external": true
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 20"
+  },
+  "set": {
+   "participants": [
+    "きたもとなおひろ"
+   ],
+   "external": false
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 25"
+  },
+  "set": {
+   "participants": [
+    "はやしみつひろ",
+    "きたもとなおひろ"
+   ],
+   "external": true,
+   "description": "打ち合わせ：はやしみつひろ、きたもとなおひろ"
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 40 24"
+  },
+  "set": {
+   "participants": [
+    "かわむらけい"
+   ],
+   "external": false
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 08"
+  },
+  "set": {
+   "participants": [
+    "かもだふなのり",
+    "よこたみちる"
+   ],
+   "external": true
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 40 14"
+  },
+  "set": {
+   "participants": [
+    "にしやまるか"
+   ],
+   "external": false
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 40 10"
+  },
+  "set": {
+   "participants": [
+    "きたもとなおひろ"
+   ],
+   "external": false
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 40 28"
+  },
+  "set": {
+   "participants": [
+    "わたなべりさ"
+   ],
+   "external": false
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 29"
+  },
+  "set": {
+   "participants": [
+    "いねやまたかのり"
+   ],
+   "external": true
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 40 20"
+  },
+  "set": {
+   "participants": [
+    "せきとおる",
+    "なかたこうだい"
+   ],
+   "external": true,
+   "amount_split": [
+    4200,
+    30
+   ]
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 34"
+  },
+  "set": {
+   "participants": [
+    "さいとうゆうひ",
+    "すずきせ",
+    "えんどうみちこ"
+   ],
+   "external": true
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "15 39 03"
+  },
+  "set": {
+   "participants": [
+    "きたやまゆきとも"
+   ],
+   "external": true
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "receiptPdf_2026100109063336"
+  },
+  "set": {
+   "participants": [
+    "うえすぎせいた"
+   ],
+   "external": false
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
+ },
+ {
+  "match": {
+   "receipt_path": "receiptPdf_2026100509044243"
+  },
+  "set": {
+   "participants": [
+    "くどうしゅん"
+   ],
+   "external": true
+  },
+  "_source": "申請時に澤田さんが freee で修正した最終値"
  }
 ]

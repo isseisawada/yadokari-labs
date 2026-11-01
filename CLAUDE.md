@@ -371,7 +371,7 @@ python3 submit_expenses.py --month 8
 - **有料で立替になっているサービス（2026年10月のカード明細で確認）**: Anthropic・OpenAI（API チャージ、月に数回）・X Developer Platform・Render・Neon・Apple（**ChatGPT Plus**。iPhone のアプリ内課金なので明細は「APPLE COM BILL」¥3,000）。
   Apple の請求は NewsPicks とは限らない → Apple の領収書メール/購入履歴で品目を確認する。ChatGPT Plus は OpenAI と同じく通信費
   どれも領収書メールは来ない（OpenAI は「account has been funded」通知だけ）→ Bルートで各管理画面から領収書PDFを保存する
-  - カード明細のスクショで黒塗りされている行（Netflix・GO・Amazon・駐車場・ドラッグストア等）は経費にしない
+  - カード明細のスクショの黒塗りは「ドル払いの確認に関係ない行」の意味のことがある（10月: 黒塗りの GO 10/3・10/6 も領収書は届いた）。黒塗り＝経費外とは決めつけない
   - カード明細画像は `inputs_2026MM/supplements/card_<サービス>_<MMDD>.jpg` で保存し、overrides.json の `sub_receipt_paths` に指定
 
 ## スマホだけで完結する運用（2026年11月〜・Mac は使わない）
@@ -393,6 +393,9 @@ python3 submit_expenses.py --month 8
 - GO / S.RIDE は Web の利用者ページが無く、発行はアプリから（2026-11 確認）。ただし月1回まとめて出せる:
   - S.RIDE: 期間を指定すると1通にまとめて届く（例: 件名「S.RIDE 領収書/RECEIPT (2026/08/03 - 2026/09/02)」、乗車ごとのPDFが添付）
   - GO: 利用履歴から複数の乗車を選んで一括発行できる（2025年12月〜の一括発行機能）。送信先は sawada@ に登録済み（2026-07）
+    - 一括発行のPDFは **1ページに複数の領収書が並ぶ**（10月分: 5件で1ページ）。freee は1つの証憑を複数明細に付けられないので
+      `/usr/bin/python3 split_go_receipts.py <PDF>` で1件ずつの画像（`GO領収書_YYYYMMDD_金額.png`）に切り分ける。元のPDFは `inputs_2026MM/originals/` へ
+- `save_mail_receipts.py` はメール本文のロゴ等の埋め込み画像は保存しない（2026-11 修正）
   - 法人契約の GO BUSINESS なら立替自体が不要（会社に請求書。利用料5%）
 - カード明細のスクショは「立替の一覧」として使う：明細にあって領収書が無いものを Claude が「足りないものリスト」にして返す
 - 最後に freee（スマホのブラウザ/アプリ）で内容を確認して「申請」を押す

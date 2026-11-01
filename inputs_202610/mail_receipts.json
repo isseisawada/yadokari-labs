@@ -74,5 +74,14 @@
   "subject": "Google Cloud Platform & APIs: 011CDD-A68321-AD4BDB の請求書の用意ができました",
   "files": [],
   "note": "9月分の請求書だが ¥0 のため除外"
+ },
+ {
+  "message_id": "1a1954e1f9f5758b",
+  "date": "2026-11-01",
+  "from": "go-support@goinc.jp",
+  "subject": "GO 領収書",
+  "files": [
+   "inputs_202610/web_receipts/GO領収書_20261002_1843.pdf"
+  ]
  }
 ]

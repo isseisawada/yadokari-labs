@@ -19,6 +19,7 @@ import argparse
 import base64
 import email
 import email.header
+import email.policy
 import email.utils
 import hashlib
 import json
@@ -67,12 +68,15 @@ def main():
             print(f"skip（取り込み済み）: {mid}")
             continue
         raw = d["raw"]
-        msg = email.message_from_bytes(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
+        msg = email.message_from_bytes(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)), policy=email.policy.default)
         subject = decode_header(msg.get("Subject"))
         sender = email.utils.parseaddr(msg.get("From", ""))[1]
         date = email.utils.parsedate_to_datetime(msg.get("Date")).date().isoformat() if msg.get("Date") else ""
 
-        atts = [(p.get_filename(), p.get_payload(decode=True)) for p in msg.walk() if p.get_filename()]
+        # 本文に埋め込まれた画像（ロゴ等、Content-ID 付き / inline）は領収書ではないので除く
+        atts = [(p.get_filename(), p.get_payload(decode=True)) for p in msg.walk()
+                if p.get_filename() and not (p.get_content_maintype() == "image"
+                                             and (p["Content-ID"] or p.get_content_disposition() == "inline"))]
         atts = [(decode_header(fn), data) for fn, data in atts if data]
         # Stripe（Anthropic / OpenAI 等）は Invoice-*.pdf と Receipt-*.pdf の両方が付く → Receipt を優先
         if any(fn.lower().startswith("receipt") for fn, _ in atts):

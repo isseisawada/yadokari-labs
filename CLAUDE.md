@@ -385,8 +385,8 @@ python3 submit_expenses.py --month 8
 | 請求メールを設定できるもの（Render / Neon / X / Railway / GitHub / OpenAI） | 最初の1回だけ、各サービスの Billing 設定で請求書・領収書のメール送信先を sawada@yadokari.net にする（できるかはサービスごとに要確認） | Gmail |
 | サイトやアプリで「領収書を発行」するとメールが来るもの（GO / S.RIDE / note / STATION WORK / Booking / Dropbox / えきねっと・EX） | スマホのアプリかブラウザで発行ボタンを押す | Gmail |
 | メールが来ないもの（OpenAI の領収書 / Amazon の適格請求書 / Google Cloud 前払い / Apple の購入履歴） | スマホで PDF 保存かスクショ → **このチャットに添付**（または件名「経費」で自分宛メール） | チャット / Gmail |
-| Suica 利用履歴 | **Claude が Mac の Chrome でモバイルSuica の Web（JRE ID: everlybrothers@）から利用履歴を取得**。Mac が使えないときだけアプリのスクショ | Drive / チャット |
-| 紙の領収書 | 写真 → チャットに添付 | チャット |
+| Suica 利用履歴 | **Claude が Mac の Chrome でモバイルSuica の Web（JRE ID: everlybrothers@）から利用履歴を取得**。Mac が使えないときだけアプリのスクショ | Dropbox / チャット |
+| 紙の領収書 | 写真を Dropbox の `経費関連/YYYYMM/photo/` に入れる（またはチャットに添付） | Dropbox / チャット |
 | ドル払いの円額 | カード明細アプリの該当行をスクショ → チャットに添付（経費でない行は黒塗りで OK） | チャット |
 
 - チャットに添付されたファイルは Claude が `inputs_2026MM/` の該当フォルダ（web_receipts / receipts / suica / supplements）に保存して git に残す
@@ -401,11 +401,14 @@ python3 submit_expenses.py --month 8
 - カード明細のスクショは「立替の一覧」として使う：明細にあって領収書が無いものを Claude が「足りないものリスト」にして返す
 - 最後に freee（スマホのブラウザ/アプリ）で内容を確認して「申請」を押す
 
-## Google ドライブの保存先（2026年11月〜）
+## 領収書の保存先は Dropbox（2026年11月〜。Google ドライブは遅いのでやめた）
 
-- `マイドライブ/経費精算/YYYYMM`（例: `経費精算/202610`）。親フォルダID `1A0ssaoV1GOoLaz9SBISkePzuLFgtaZB-`
-  - 202610: `16ZGW85KFZve1yJagrW3y-AnFCfo0TGdq` / 202611: `1VGtmFv8aXXTaKSY_2X3Up5pqolzLH73l`
-- **202610〜202907 の月フォルダは作成済み**（2026-11-01）。フォルダは名前で検索すれば見つかる（`parentId = '1A0ssaoV1GOoLaz9SBISkePzuLFgtaZB-' and title = 'YYYYMM'`）
-- 202908 以降用に定期タスク「経費精算フォルダ作成（翌月分）」（trig_01CFQXYXMejfsKPeSdMX81tF、毎月25日 10:17 JST）を**停止状態で**残してある
-  - 2029年7月ごろに有効化する。Google ドライブのコネクタを claude.ai の定期タスク画面で追加しないと動かない
-- Mac の Chrome で取得した領収書は Drive for desktop 経由でこのフォルダに保存 → クラウドの Claude が Drive コネクタで読む
+- **`/Private/さわだいっせい/プライベート/経費関連/YYYYMM/`**（例: `経費関連/202610`）
+  - 直下: Web で取得した領収書・明細の PDF（Mac の Claude が Chrome で取得して保存）
+  - `photo/`: 紙の領収書の写真（澤田さんがスマホで撮って入れる）
+- **クラウドの Claude は Dropbox の中身を読めない**（2026-11 確認）:
+  - `download_link` の URL（dl.dropboxusercontent.com）はこの環境のネットワーク制限で 403
+  - `fetch` は画像に非対応。`list_folder` でファイル一覧は見られる
+  - → **Mac 上の Claude セッションが、Dropbox のファイルをリポジトリの `inputs_2026MM/`（PDF は web_receipts/、写真は receipts/）にコピーして push** する。
+    写真は `sips -Z 1600` で縮小してから入れる（1枚 3〜4MB あるため）
+- Google ドライブの `経費精算/202610〜202907` フォルダと定期タスク（trig_01CFQXYXMejfsKPeSdMX81tF、停止中）は使わない

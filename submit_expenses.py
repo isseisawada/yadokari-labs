@@ -127,6 +127,9 @@ def decide(entry: dict) -> Decision:
     # --- STATION WORK（発行元は JR東日本ビルディング）: JR 判定より先に ---
     if "station work" in vl or "jr東日本ビルディング" in vl or "ｊｒ東日本ビルディング" in vl:
         return Decision(T_MEETING_IN, "オフィスブース")
+    # テレキューブ（STATION WORK の競合。2026年11月〜利用）も同じ扱い
+    if "telecube" in vl or "テレキューブ" in vendor:
+        return Decision(T_MEETING_IN, "オフィスブース")
 
     # --- 交通系（ベンダー名で判定） ---
     if "飛行機" in account or any(k in vl for k in FLIGHT_KEYWORDS):
@@ -213,7 +216,9 @@ def build_description(entry: dict, dec: Decision) -> str:
         "高速・有料道路":      "出張：高速道路利用",
         "ガソリン代":          "打ち合わせ",      # 移動目的として「打ち合わせ」と書く運用
         "備品消耗品":          "消耗品",
-        "オフィスブース":      "オフィスブース利用（STATION WORK）",
+        "オフィスブース":      ("オフィスブース利用（テレキューブ）"
+                                if ("telecube" in vendor.lower() or "テレキューブ" in vendor)
+                                else "オフィスブース利用（STATION WORK）"),
         "新聞図書費":          "知識獲得のため",
         "宿泊費":              entry.get("trip") or "出張",
         "レンタカー料金":      entry.get("trip") or "出張利用",

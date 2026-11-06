@@ -51,6 +51,7 @@
 - 石油・SS・ガソリン → 300524 ガソリン代
 - ○○パーク / 駐車場 / パーキング → 300525 駐車場代
 - STATION WORK → 300528 会議費（社内）、内容は `オフィスブース利用（STATION WORK 東京駅）`
+- **テレキューブ（telecube.jp。STATION WORK の競合、2026-11-06 初利用）→ 300528 会議費（社内）**、内容は `打ち合わせ：名前　オフィスブース利用（テレキューブ）`
 - Soil work / Staple → **雑費**
 - **API 課金・クラウド（Google Cloud / Gemini / Anthropic / OpenAI / X Developer / AWS）・Dropbox → 通信費**
 - **note / iTunes(NewsPicks) / その他サブスク → 雑費**（freee に「雑費」テンプレートがある。勘定科目は支払手数料）
@@ -118,6 +119,7 @@ freee には「雑費」テンプレートは存在しないが、`account_item_
 | 雑費（サブスク） | サービス名を残す。`Google Cloud 2026年8月分利用料` |
 | note 月刊 谷尻誠 | `株主たにじりまこと親睦のため`（改行）`note 月刊谷尻誠 2026年10月分利用料` |
 | STATION WORK | `打ち合わせ：うえすぎせいた　オフィスブース利用（STATION WORK）`（一緒に使った人を入れる） |
+| テレキューブ | `打ち合わせ：うえすぎせいた　オフィスブース利用（テレキューブ）` |
 | NewsPicks など情報サービス（雑費） | `知識獲得のため　NewsPicks 2026年9月分利用料` |
 | 株主同席時 | 末尾に `株主XXX親睦のため` |
 
@@ -379,7 +381,7 @@ python3 submit_expenses.py --month 8
   `python3 save_mail_receipts.py --month M <JSON...>` に渡すと添付PDFを取り出して保存する
   - 同じ内容のファイル・取り込み済みのメールは保存しない（`inputs_2026MM/mail_receipts.json` に記録）
   - Stripe 系（Anthropic 等）は Invoice と Receipt が両方付くので Receipt だけ残す
-- 検索の目安: `after:YYYY/MM/01 before:YYYY/MM+1/03 from:(invoice@mail.anthropic.com OR sride.co.jp OR stationwork.jp OR payments-noreply@google.com OR apple.com OR note.jp OR dropbox.com OR booking.com OR goinc.jp)` と、件名 `領収書 OR receipt OR 請求書 OR invoice`
+- 検索の目安: `after:YYYY/MM/01 before:YYYY/MM+1/03 from:(invoice@mail.anthropic.com OR sride.co.jp OR stationwork.jp OR telecube.jp OR payments-noreply@google.com OR apple.com OR note.jp OR dropbox.com OR booking.com OR goinc.jp)` と、件名 `領収書 OR receipt OR 請求書 OR invoice`
 - 注意（2026年10月分で確認）:
   - STATION WORK の領収書メールは利用の翌月に届くことがある（10/3 着が 9/9 利用分）→ 前月申請済みのものは除外
   - Google Cloud の月次請求書は ¥0 のことがある → 除外
@@ -450,3 +452,14 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 | フリューリング（8%と10%が混在）を **税率ごとに2行**（¥4,200＋¥30）に分割、会議費（社外）せきとおる・なかたこうだい | overrides.json に `"amount_split": [4200, 30]` で分割できるようにした |
 | 推定の名前はほぼ差し替え（八煌苑・すし好・たき航・道とん堀・ドトール3件・雁川・道の駅こすげ） | 確定した名前を `history/meal_history.json` に追加（494件） |
 | カレンダーからの名前も一部違った：雁川は さいとうゆうひ・すずきせ・えんどうみちこ（菅原様は入れない）、北山さんは **きたやまゆきとも** | 取引先（取材相手など）本人は入れず、同行した人を入れることがある。同名字の候補が複数いるときは確認 |
+
+## テレキューブ（2026年11月〜）
+
+- STATION WORK の競合のワークブース。2026-11-06 に初利用（新丸ビル 02-10、13:45〜16:00、¥2,970 税込）。アカウントは sawada@yadokari.net（個人会員）
+- **領収書の取り方（B→A）**: マイページの「領収書発行」画面 https://telecube.jp/member/receipts/ で発行 → 登録メール（sawada@）に PDF が届く → Aルートで取り込み
+  - 「請求月一覧」→「領収書を発行（月単位発行）」= 1か月分まとめて1枚
+  - 「月内明細」→ 利用ごとに発行 = **こちらを使う**（freee は1明細1証憑なので、利用日ごとに参加者を書けるように1回ずつ）
+  - 発行時に宛名を指定できる → `YADOKARI株式会社`
+- メール: 予約時「ご予約ありがとうございます」（料金入り）、利用後「ご利用完了と領収書発行方法について」（no-reply@telecube.jp）。どちらも領収書ではないので取り込まない
+- 科目: 会議費（オフィスブース）。`submit_expenses.py` がベンダー名「テレキューブ / telecube」で自動判定
+- 2026-11-06 時点、クラウドからは Mac に接続できず発行ボタンは未実行（初回の発行は Mac の Claude か澤田さんがスマホで）

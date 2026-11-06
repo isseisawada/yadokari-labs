@@ -49,6 +49,8 @@ def fix_receipt(entry: dict, year: int) -> dict:
         entry["account"] = "会議費"
         if not entry.get("description"):
             entry["description"] = "オフィスブース利用（STATION WORK）"
+    if "telecube" in vl or "テレキューブ" in vendor:
+        entry["account"] = "会議費"
 
     entry.setdefault("participants", [])
     return entry

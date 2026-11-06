@@ -1879,11 +1879,11 @@ function renderShared(el) {
   const g = div('sel-grid');
 
   // 自由記入オプション付きの配送セレクトを構築するヘルパー（obj は state もしくはシリーズ state）
-  const customOpt = (obj, idxKey) => `<option value="-1" ${obj[idxKey]===-1?'selected':''}>自由記入</option>`;
+  const customOpt = (obj, idxKey) => `<option value="-1" ${obj[idxKey]===-1?'selected':''}>自由記入（1台単価）</option>`;
   const customInput = (obj, idxKey, valKey, labelKey) =>
     `<div class="trans-custom-wrap" style="display:${obj[idxKey]===-1?'block':'none'};margin-top:8px">`
     + `<input type="text" class="trans-custom-label" placeholder="項目名（任意）" value="${escapeAttr(obj[labelKey]||'')}">`
-    + `<div class="cst-price-field"><span class="cst-yen">¥</span><input type="number" class="trans-custom-input" placeholder="売価を入力" min="0" step="1000" value="${obj[valKey]||''}"></div>`
+    + `<div class="cst-price-field"><span class="cst-yen">¥</span><input type="number" class="trans-custom-input" placeholder="1台あたりの売価を入力" min="0" step="1000" value="${obj[valKey]||''}"></div>`
     + `</div>`;
   const bindCustom = (g1, obj, idxKey, valKey, labelKey) => {
     const sel = g1.querySelector('select');
@@ -2190,7 +2190,8 @@ function collectLines() {
     if (s.transportIdx === -1) {
       if ((s.transportCustom || 0) > 0) {
         const base = s.transportCustomLabel ? `配送費用（${s.transportCustomLabel}）` : '配送費用（自由記入）';
-        shared.push({ name: multi ? `${base}${sr.label}` : base, val: s.transportCustom || 0, cost: 0 });
+        // 自由記入は1台単価なので台数分を掛ける
+        shared.push({ name: multi ? `${base}${sr.label}${ql(sr.qty)}` : `${base}${ql(sr.qty)}`, val: (s.transportCustom || 0) * sr.qty, cost: 0 });
       }
     } else {
       const tr = TRANSPORT_OPTS.find(o => o.idx === s.transportIdx);
@@ -2203,7 +2204,7 @@ function collectLines() {
   if (hasYLW && state.ylwTransportIdx === -1) {
     if ((state.ylwTransportCustom || 0) > 0) {
       const nm = state.ylwTransportCustomLabel ? `配送費用（${state.ylwTransportCustomLabel}・YLW600）` : '配送費用（自由記入・YLW600）';
-      shared.push({ name: nm, val: state.ylwTransportCustom || 0, cost: 0 });
+      shared.push({ name: nm + ql(ylwQty), val: (state.ylwTransportCustom || 0) * ylwQty, cost: 0 });
     }
   } else if (ylw && ylwPrice(ylw) > 0) {
     const label = `${ylw.region ? ylw.region + '/' : ''}${ylw.label}`;
@@ -2213,7 +2214,7 @@ function collectLines() {
   if (hasYclYnr && state.chTransportIdx === -1) {
     if ((state.chTransportCustom || 0) > 0) {
       const nm = state.chTransportCustomLabel ? `配送費用（${state.chTransportCustomLabel}・YCL/YNR）` : '配送費用（自由記入・YCL/YNR）';
-      shared.push({ name: nm, val: state.chTransportCustom || 0, cost: 0 });
+      shared.push({ name: nm + ql(yclYnrQty), val: (state.chTransportCustom || 0) * yclYnrQty, cost: 0 });
     }
   } else if (ch && chtrPrice(ch) > 0) {
     const label = `${ch.region ? ch.region + '/' : ''}${ch.label}`;

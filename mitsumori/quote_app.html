@@ -887,15 +887,15 @@ const CHASSIS_GROUPS = [
   { size:'YLW',             models:['ch6'] },
 ];
 const CHASSIS_OPTS = [
-  { id:'co1',  name:'リジットジャッキ YCL360用（4個）',     ico:'⚙️', price:60000,  cost:38000 },
-  { id:'co2',  name:'リジットジャッキ YCL/YNR600用（6個）', ico:'⚙️', price:90000,  cost:57000 },
-  { id:'co3',  name:'リジットジャッキ YNR720,900用（8個）', ico:'⚙️', price:120000, cost:76000 },
-  { id:'co4',  name:'リジットジャッキ YLW600用（6個）',     ico:'⚙️', price:150000, cost:96000 },
-  { id:'co5',  name:'土台ベース YNR600用',                  ico:'🏗️', price:430000, cost:280000 },
-  { id:'co6',  name:'土台ベース YNR720用',                  ico:'🏗️', price:445000, cost:290000 },
-  { id:'co7',  name:'土台ベース YNR900用',                  ico:'🏗️', price:580000, cost:380000 },
-  { id:'co8',  name:'土台ベース YCL600用',                  ico:'🏗️', price:385000, cost:250000 },
-  { id:'co9',  name:'土台ベース YLW600用',                  ico:'🏗️', price:440000, cost:286320 },
+  { id:'co1',  name:'リジットジャッキ YCL360用（4個）',     models:['ch1'], ico:'⚙️', price:60000,  cost:38000 },
+  { id:'co2',  name:'リジットジャッキ YCL/YNR600用（6個）', models:['ch2','ch3'], ico:'⚙️', price:90000,  cost:57000 },
+  { id:'co3',  name:'リジットジャッキ YNR720,900用（8個）', models:['ch4','ch5'], ico:'⚙️', price:120000, cost:76000 },
+  { id:'co4',  name:'リジットジャッキ YLW600用（6個）',     models:['ch6'], ico:'⚙️', price:150000, cost:96000 },
+  { id:'co5',  name:'土台ベース YNR600用',                  models:['ch3'], ico:'🏗️', price:430000, cost:280000 },
+  { id:'co6',  name:'土台ベース YNR720用',                  models:['ch4'], ico:'🏗️', price:445000, cost:290000 },
+  { id:'co7',  name:'土台ベース YNR900用',                  models:['ch5'], ico:'🏗️', price:580000, cost:380000 },
+  { id:'co8',  name:'土台ベース YCL600用',                  models:['ch2'], ico:'🏗️', price:385000, cost:250000 },
+  { id:'co9',  name:'土台ベース YLW600用',                  models:['ch6'], ico:'🏗️', price:440000, cost:286320 },
   { id:'co10', name:'予備車検',                             ico:'🔍', price:80000,  cost:0 },
 ];
 
@@ -2120,7 +2120,8 @@ function collectLines() {
       const qty = s.modelQtys[m.id]||0; if (!qty) return;
       lines.push({ name:`【ベース】${m.label}${ql(qty)}`, val:mPrice(m)*qty, cost:mCost(m)*qty, cls:'base' });
     });
-    CHASSIS_OPTS.forEach(o => { if (s.opts[o.id]) lines.push({ name:o.name+ql(tq), val:chPrice(o)*tq, cost:chCost(o)*tq }); });
+    // ジャッキ・土台ベースは対象シャーシの台数分だけ計上（models 未指定の項目は従来どおりシャーシ総台数）
+    CHASSIS_OPTS.forEach(o => { if (!s.opts[o.id]) return; const oq = o.models ? o.models.reduce((a,id) => a + (s.modelQtys[id]||0), 0) : tq; if (oq > 0) lines.push({ name:o.name+ql(oq), val:chPrice(o)*oq, cost:chCost(o)*oq }); });
     sections.push({ title:'シャーシ', key:'chassis', lines });
   }
 

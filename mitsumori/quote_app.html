@@ -887,15 +887,15 @@ const CHASSIS_GROUPS = [
   { size:'YLW',             models:['ch6'] },
 ];
 const CHASSIS_OPTS = [
-  { id:'co1',  name:'リジットジャッキ YCL360用（4個）',     ico:'⚙️', price:60000,  cost:38000 },
-  { id:'co2',  name:'リジットジャッキ YCL/YNR600用（6個）', ico:'⚙️', price:90000,  cost:57000 },
-  { id:'co3',  name:'リジットジャッキ YNR720,900用（8個）', ico:'⚙️', price:120000, cost:76000 },
-  { id:'co4',  name:'リジットジャッキ YLW600用（6個）',     ico:'⚙️', price:150000, cost:96000 },
-  { id:'co5',  name:'土台ベース YNR600用',                  ico:'🏗️', price:430000, cost:280000 },
-  { id:'co6',  name:'土台ベース YNR720用',                  ico:'🏗️', price:445000, cost:290000 },
-  { id:'co7',  name:'土台ベース YNR900用',                  ico:'🏗️', price:580000, cost:380000 },
-  { id:'co8',  name:'土台ベース YCL600用',                  ico:'🏗️', price:385000, cost:250000 },
-  { id:'co9',  name:'土台ベース YLW600用',                  ico:'🏗️', price:440000, cost:286320 },
+  { id:'co1',  name:'リジットジャッキ YCL360用（4個）',     models:['ch1'], ico:'⚙️', price:60000,  cost:38000 },
+  { id:'co2',  name:'リジットジャッキ YCL/YNR600用（6個）', models:['ch2','ch3'], ico:'⚙️', price:90000,  cost:57000 },
+  { id:'co3',  name:'リジットジャッキ YNR720,900用（8個）', models:['ch4','ch5'], ico:'⚙️', price:120000, cost:76000 },
+  { id:'co4',  name:'リジットジャッキ YLW600用（6個）',     models:['ch6'], ico:'⚙️', price:150000, cost:96000 },
+  { id:'co5',  name:'土台ベース YNR600用',                  models:['ch3'], ico:'🏗️', price:430000, cost:280000 },
+  { id:'co6',  name:'土台ベース YNR720用',                  models:['ch4'], ico:'🏗️', price:445000, cost:290000 },
+  { id:'co7',  name:'土台ベース YNR900用',                  models:['ch5'], ico:'🏗️', price:580000, cost:380000 },
+  { id:'co8',  name:'土台ベース YCL600用',                  models:['ch2'], ico:'🏗️', price:385000, cost:250000 },
+  { id:'co9',  name:'土台ベース YLW600用',                  models:['ch6'], ico:'🏗️', price:440000, cost:286320 },
   { id:'co10', name:'予備車検',                             ico:'🔍', price:80000,  cost:0 },
 ];
 
@@ -1879,11 +1879,11 @@ function renderShared(el) {
   const g = div('sel-grid');
 
   // 自由記入オプション付きの配送セレクトを構築するヘルパー（obj は state もしくはシリーズ state）
-  const customOpt = (obj, idxKey) => `<option value="-1" ${obj[idxKey]===-1?'selected':''}>自由記入</option>`;
+  const customOpt = (obj, idxKey) => `<option value="-1" ${obj[idxKey]===-1?'selected':''}>自由記入（1台単価）</option>`;
   const customInput = (obj, idxKey, valKey, labelKey) =>
     `<div class="trans-custom-wrap" style="display:${obj[idxKey]===-1?'block':'none'};margin-top:8px">`
     + `<input type="text" class="trans-custom-label" placeholder="項目名（任意）" value="${escapeAttr(obj[labelKey]||'')}">`
-    + `<div class="cst-price-field"><span class="cst-yen">¥</span><input type="number" class="trans-custom-input" placeholder="売価を入力" min="0" step="1000" value="${obj[valKey]||''}"></div>`
+    + `<div class="cst-price-field"><span class="cst-yen">¥</span><input type="number" class="trans-custom-input" placeholder="1台あたりの売価を入力" min="0" step="1000" value="${obj[valKey]||''}"></div>`
     + `</div>`;
   const bindCustom = (g1, obj, idxKey, valKey, labelKey) => {
     const sel = g1.querySelector('select');
@@ -2120,7 +2120,8 @@ function collectLines() {
       const qty = s.modelQtys[m.id]||0; if (!qty) return;
       lines.push({ name:`【ベース】${m.label}${ql(qty)}`, val:mPrice(m)*qty, cost:mCost(m)*qty, cls:'base' });
     });
-    CHASSIS_OPTS.forEach(o => { if (s.opts[o.id]) lines.push({ name:o.name+ql(tq), val:chPrice(o)*tq, cost:chCost(o)*tq }); });
+    // ジャッキ・土台ベースは対象シャーシの台数分だけ計上（models 未指定の項目は従来どおりシャーシ総台数）
+    CHASSIS_OPTS.forEach(o => { if (!s.opts[o.id]) return; const oq = o.models ? o.models.reduce((a,id) => a + (s.modelQtys[id]||0), 0) : tq; if (oq > 0) lines.push({ name:o.name+ql(oq), val:chPrice(o)*oq, cost:chCost(o)*oq }); });
     sections.push({ title:'シャーシ', key:'chassis', lines });
   }
 
@@ -2189,7 +2190,8 @@ function collectLines() {
     if (s.transportIdx === -1) {
       if ((s.transportCustom || 0) > 0) {
         const base = s.transportCustomLabel ? `配送費用（${s.transportCustomLabel}）` : '配送費用（自由記入）';
-        shared.push({ name: multi ? `${base}${sr.label}` : base, val: s.transportCustom || 0, cost: 0 });
+        // 自由記入は1台単価なので台数分を掛ける
+        shared.push({ name: multi ? `${base}${sr.label}${ql(sr.qty)}` : `${base}${ql(sr.qty)}`, val: (s.transportCustom || 0) * sr.qty, cost: 0 });
       }
     } else {
       const tr = TRANSPORT_OPTS.find(o => o.idx === s.transportIdx);
@@ -2202,7 +2204,7 @@ function collectLines() {
   if (hasYLW && state.ylwTransportIdx === -1) {
     if ((state.ylwTransportCustom || 0) > 0) {
       const nm = state.ylwTransportCustomLabel ? `配送費用（${state.ylwTransportCustomLabel}・YLW600）` : '配送費用（自由記入・YLW600）';
-      shared.push({ name: nm, val: state.ylwTransportCustom || 0, cost: 0 });
+      shared.push({ name: nm + ql(ylwQty), val: (state.ylwTransportCustom || 0) * ylwQty, cost: 0 });
     }
   } else if (ylw && ylwPrice(ylw) > 0) {
     const label = `${ylw.region ? ylw.region + '/' : ''}${ylw.label}`;
@@ -2212,7 +2214,7 @@ function collectLines() {
   if (hasYclYnr && state.chTransportIdx === -1) {
     if ((state.chTransportCustom || 0) > 0) {
       const nm = state.chTransportCustomLabel ? `配送費用（${state.chTransportCustomLabel}・YCL/YNR）` : '配送費用（自由記入・YCL/YNR）';
-      shared.push({ name: nm, val: state.chTransportCustom || 0, cost: 0 });
+      shared.push({ name: nm + ql(yclYnrQty), val: (state.chTransportCustom || 0) * yclYnrQty, cost: 0 });
     }
   } else if (ch && chtrPrice(ch) > 0) {
     const label = `${ch.region ? ch.region + '/' : ''}${ch.label}`;

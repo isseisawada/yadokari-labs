@@ -21,8 +21,25 @@
     if (zs && zs.hubspot_deal_id && !st.deal) { st.deal = { id: zs.hubspot_deal_id, name: zs.hubspot_deal_name || ('取引 ' + zs.hubspot_deal_id) }; save(); }
   } catch (e) { /* ignore */ }
 
+  // ?demo=1 のときは HubSpot・Slack を呼ばず、にせものの返事で画面の流れだけ見せる
+  var DEMO = /[?&]demo=1\b/.test(location.search);
+  function demo(body) {
+    var deal = { id: 'demo1', name: (state.customerName || 'サンプル顧客') + '（見学用）' };
+    var q = body.quote || {};
+    var reasons = [q.discount > 0 ? '値引きあり' : '', q.marginPct < 30 ? '粗利率が基準未満' : ''].filter(Boolean);
+    var res = {
+      search: { deals: [deal] },
+      create: { deal: { id: 'demo2', name: body.dealname } },
+      estimate: { status: 'estimate' },
+      confirm: { status: 'pending', steps: reasons.length ? ['manager', 'corporate'] : ['manager'], reasons: reasons },
+      status: { status: 'approved' },
+    }[body.action];
+    return new Promise(function (ok) { setTimeout(function () { ok(res); }, 400); });
+  }
+
   function call(body) {
     body.ns = NS;
+    if (DEMO) return demo(body);
     return fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
@@ -53,7 +70,7 @@
   }
 
   function panel() {
-    var c = sectionCard('HubSpot 連携（テスト中）', 'テスト用パイプラインの取引にだけ書き込みます');
+    var c = sectionCard('HubSpot 連携（テスト中）', DEMO ? '見学用モード：HubSpot・Slack には何も送りません' : 'テスト用パイプラインの取引にだけ書き込みます');
     var msg = h('div', { style: 'font-size:12px;margin-top:6px;min-height:1em' });
     function say(t, bad) { msg.textContent = t; msg.style.color = bad ? '#b00020' : '#555'; }
 

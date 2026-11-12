@@ -12,8 +12,7 @@ export const db = () => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get
  */
 export function allowedPipeline(ns: string): string {
   if (ns === "test") {
-    const p = Deno.env.get("HUBSPOT_TEST_PIPELINE_ID");
-    if (!p) throw new Error("HUBSPOT_TEST_PIPELINE_ID が未設定です");
+    const p = Deno.env.get("HUBSPOT_TEST_PIPELINE_ID") || "2720881384"; // 【テスト】見積連携（2026-11-12 作成）
     return p;
   }
   if (ns === "prod" && Deno.env.get("QUOTE_HUBSPOT_PROD") === "on") return Deno.env.get("HUBSPOT_PROD_PIPELINE_ID") ?? "default";

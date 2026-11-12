@@ -29,6 +29,12 @@ function checkQuote(q: Quote | undefined): Quote {
   return q;
 }
 
+/** 見積もりシミュレーターは保存のたびに番号を作り直すので、同じ取引の古い「概算」の記録は消して1件にする */
+async function dropEstimates(ns: string, dealId: string) {
+  const { error } = await db().from("quote_links").delete().eq("ns", ns).eq("hubspot_deal_id", dealId).eq("status", "estimate");
+  if (error) throw error;
+}
+
 const termsLabel = (t: ReturnType<typeof parseTerms>) => (t.kind === "lump" ? "一括" : `着手金 ${t.depositPct}%＋残金`);
 
 async function handle(b: Body) {
@@ -51,6 +57,7 @@ async function handle(b: Body) {
       const stage = stageIdByPrefix(await pipelineStages(pipeline), "D.");
       await updateDeal(b.dealId!, { ...dealProperties(q, terms, "estimate"), ...(stage ? { dealstage: stage } : {}) });
       await replaceLineItems(b.dealId!, lineItems(q));
+      await dropEstimates(b.ns, b.dealId!);
       const { error } = await db().from("quote_links").upsert({
         quote_id: q.id, ns: b.ns, hubspot_deal_id: b.dealId, status: "estimate", payment_terms: terms, quote: q, updated_at: new Date().toISOString(),
       });
@@ -76,6 +83,7 @@ async function handle(b: Body) {
           approverIds: approvers("manager"),
         }),
       });
+      await dropEstimates(b.ns, b.dealId!);
       const { error } = await db().from("quote_links").upsert({
         quote_id: q.id, ns: b.ns, hubspot_deal_id: b.dealId, status: "pending", payment_terms: terms, new_customer: !!b.newCustomer,
         steps, reasons, quote: q, slack_channel: msg.channel, slack_ts: msg.ts, last_error: null, updated_at: new Date().toISOString(),

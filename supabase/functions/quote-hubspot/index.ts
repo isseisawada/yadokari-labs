@@ -66,7 +66,7 @@ async function handle(b: Body) {
       const reasons = corporateReasons(input, rules());
       await updateDeal(b.dealId!, dealProperties(q, terms, "pending"));
       await replaceLineItems(b.dealId!, lineItems(q));
-      const channel = Deno.env.get("SLACK_APPROVAL_CHANNEL")!;
+      const channel = Deno.env.get("SLACK_APPROVAL_CHANNEL") || "C0CH6KBEX41"; // テスト中の既定は #test_見積承認
       const msg = await slack("chat.postMessage", {
         channel,
         text: "見積もりの承認依頼",

@@ -26,8 +26,10 @@ export const rules = (): ApprovalRules => ({
 });
 
 /** 承認できる人（Slack のユーザーID）。テスト中はさわださんだけを入れる */
-export const approvers = (step: "manager" | "corporate") =>
-  list(step === "manager" ? "SLACK_MANAGER_USER_IDS" : "SLACK_CORPORATE_USER_IDS");
+export const approvers = (step: "manager" | "corporate") => {
+  const ids = list(step === "manager" ? "SLACK_MANAGER_USER_IDS" : "SLACK_CORPORATE_USER_IDS");
+  return ids.length ? ids : ["USNRVSSMR"]; // テスト中の既定はさわださんだけ
+};
 
 export const cors = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "https://isseisawada.github.io",

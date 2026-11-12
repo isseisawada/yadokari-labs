@@ -4,6 +4,9 @@
 
 ## 入れ方（5分）
 
+- 管理表：https://docs.google.com/spreadsheets/d/1RqL4XFbDtB6Dn63kG5IhXbUHeoaslgN9Qscse5ngjI4/edit
+- Apps Script（管理表に付いているもの）：https://script.google.com/u/0/home/projects/1ps1gf-oglS8TAqq-yyuvsEvYFG4liMMOrxNNa_nulOlVoleaXfY1rGZC/edit
+
 1. 管理表を開き、「拡張機能」→「Apps Script」
 2. 最初からある `コード.gs` の中身を消し、`Code.gs` の中身を貼り付けて保存
 3. 管理表を開き直すと、上に「自動取得」メニューが出る

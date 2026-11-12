@@ -207,4 +207,6 @@ assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
   assert.strictEqual(props.HEARING_PENDING, '{}');
 }
 
+assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ車両扱い）', '掲載なし（確認済）'));
+
 console.log('ok');

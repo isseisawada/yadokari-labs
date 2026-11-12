@@ -45,8 +45,10 @@ settings:
     request_url: https://bvwyyocqynbftjnkzsvw.supabase.co/functions/v1/slack-approval
 ```
 インストール後、次の2つを Supabase の秘密情報に入れます。
-- Bot User OAuth Token → `SLACK_BOT_TOKEN`
-- Basic Information の Signing Secret → `SLACK_SIGNING_SECRET`
+- Bot User OAuth Token → `QUOTE_SLACK_BOT_TOKEN`
+- Basic Information の Signing Secret → `QUOTE_SLACK_SIGNING_SECRET`
+
+※ `SLACK_BOT_TOKEN`・`SLACK_SIGNING_SECRET` は、同じプロジェクトの価格変更の承認（notify-approval・slack-interact、Slack アプリ「見積もりシミュレーター」）が使っているので上書きしない（2026-11-12）。
 
 テスト用のチャンネル（例：#test_見積承認）を作り、このアプリを招待してください。
 
@@ -56,8 +58,8 @@ settings:
 | --- | --- | --- |
 | `HUBSPOT_TOKEN` | 2 の鍵 | |
 | `HUBSPOT_TEST_PIPELINE_ID` | テスト用パイプラインの ID | hubspot-setup.ts が表示する ID |
-| `SLACK_BOT_TOKEN` / `SLACK_SIGNING_SECRET` | 3 の値 | |
-| `SLACK_APPROVAL_CHANNEL` | 承認依頼を出すチャンネルの ID | テスト用チャンネル |
+| `QUOTE_SLACK_BOT_TOKEN` / `QUOTE_SLACK_SIGNING_SECRET` | 3 の値（Slack アプリ「見積もり承認（テスト）」A0CGPB0LJ3Z） | |
+| `SLACK_APPROVAL_CHANNEL` | 承認依頼を出すチャンネルの ID | C0CH6KBEX41（#test_見積承認） |
 | `SLACK_MANAGER_USER_IDS` | 上長の承認者（Slack のユーザーID、カンマ区切り） | さわださん（USNRVSSMR）だけ |
 | `SLACK_CORPORATE_USER_IDS` | コーポレートの承認者 | さわださん（USNRVSSMR）だけ |
 | `APPROVAL_MARGIN_THRESHOLD_PCT` | これ未満の粗利率はコーポレートにも回す | 30（仮。決裁権限表が決まったら直す） |

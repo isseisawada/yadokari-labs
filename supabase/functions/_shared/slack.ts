@@ -3,7 +3,7 @@
 export async function slack(method: string, body: unknown) {
   const res = await fetch(`https://slack.com/api/${method}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${Deno.env.get("SLACK_BOT_TOKEN")}`, "Content-Type": "application/json; charset=utf-8" },
+    headers: { Authorization: `Bearer ${Deno.env.get("QUOTE_SLACK_BOT_TOKEN")}`, "Content-Type": "application/json; charset=utf-8" },
     body: JSON.stringify(body),
   });
   const r = await res.json();
@@ -18,7 +18,7 @@ export async function verifySlack(req: Request, raw: string): Promise<boolean> {
   if (!ts || Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(Deno.env.get("SLACK_SIGNING_SECRET") ?? ""),
+    new TextEncoder().encode(Deno.env.get("QUOTE_SLACK_SIGNING_SECRET") ?? ""),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],

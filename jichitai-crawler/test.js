@@ -191,7 +191,7 @@ assert.ok(f.isNotice_('<!here> 八王子市の件'));
 assert.ok(!f.isNotice_('八王子市の建築指導課キシさんに電話。車両扱いでOK'));
 assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
 
-// Slack の取り込み：聞き返すのは自治体がわからんときだけ。返事は投稿した本人のものだけ読む
+// Slack の取り込み：聞き返すのは自治体がわからないときだけ。返事は投稿した本人のものだけ読む
 {
   const posted = [], seen = [];
   let replies = [{ ts: '100.1', user: 'U1', text: '建築審査課に電話' }, { ts: '100.2', bot_id: 'B', text: 'どこの自治体の話か' }, { ts: '100.3', user: 'U2', text: '<@U3> この件' }];
@@ -204,12 +204,12 @@ assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
   vm.runInContext('this.intakeSlack_ = intakeSlack_;', ctx);
   ctx.intakeSlack_(p, p, null, [], 'URL');
   assert.deepStrictEqual(seen, ['熊谷市 建築審査課']); // 別の人の返信には反応しない
-  assert.ok(/記録しときました/.test(posted[0]) && !/教えて/.test(posted[0])); // 担当者名が無くても聞き返さない
+  assert.ok(/記録しました/.test(posted[0]) && !/教えて/.test(posted[0])); // 担当者名が無くても聞き返さない
   assert.ok(JSON.parse(props.HEARING_PENDING)['100.1']);
   replies = replies.concat([{ ts: '100.4', user: 'U1', text: '熊谷市です' }]); history = []; posted.length = seen.length = 0;
   ctx.intakeSlack_(p, p, null, [], 'URL');
   assert.ok(/（記録係からの質問）どこの自治体の話か\n熊谷市です/.test(seen[0]) && !/U3/.test(seen[0]));
-  assert.ok(/追記しときました/.test(posted[0]));
+  assert.ok(/追記しました/.test(posted[0]));
   assert.strictEqual(props.HEARING_PENDING, '{}');
 }
 // 読み直しても、人が手で直した欄は残す

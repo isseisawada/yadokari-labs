@@ -476,14 +476,14 @@ function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
   const pending = JSON.parse(p.getProperty('HEARING_PENDING') || '{}'); // 聞き返し中：投稿ts → 最後に見た返信ts
   const post = (ts, text) => slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: ts, text }).ts;
 
-  // 自治体がわからんときだけ聞き返した。投稿した本人がそのスレッドに返信したら1回だけ読み直す（ほかの人の雑談には反応しない）
+  // 自治体がわからないときだけ聞き返した。投稿した本人がそのスレッドに返信したら1回だけ読み直す（ほかの人の雑談には反応しない）
   Object.keys(pending).forEach(ts => {
     const msgs = slackApi_(keys, 'conversations.replies', { channel: ch, ts }).messages || [];
     const fresh = msgs.filter(m => !m.bot_id && m.ts !== ts && m.user === msgs[0].user && Number(m.ts) > Number(pending[ts]));
     if (!fresh.length) return;
     // 質問も渡す（自治体名だけの返事が、何への答えかわかるように）
     const text = msgs.filter(m => m.bot_id || m.user === msgs[0].user).map(m => m.bot_id ? `（記録係からの質問）${m.text}` : m.text).join('\n');
-    if (recordHearing_(sheet, masterRows, keys, ch, msgs[0], text)) post(ts, `おおきに！<${sheetUrl}|管理表>に追記しときました。`);
+    if (recordHearing_(sheet, masterRows, keys, ch, msgs[0], text)) post(ts, `ありがとうございます。<${sheetUrl}|管理表>に追記しました。`);
     delete pending[ts];
   });
 
@@ -494,8 +494,8 @@ function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
     .sort((a, b) => Number(a.ts) - Number(b.ts));
   msgs.forEach(m => {
     const missing = recordHearing_(sheet, masterRows, keys, ch, m, m.text);
-    if (missing && missing.includes('自治体')) pending[m.ts] = post(m.ts, 'おおきに！どこの自治体の話か、このスレッドで教えてもらえます？');
-    else if (missing) post(m.ts, `おおきに！<${sheetUrl}|管理表>に記録しときました。`);
+    if (missing && missing.includes('自治体')) pending[m.ts] = post(m.ts, 'ありがとうございます。どちらの自治体の件か、このスレッドで教えていただけますか。');
+    else if (missing) post(m.ts, `ありがとうございます。<${sheetUrl}|管理表>に記録しました。`);
     p.setProperty('HEARING_TS', m.ts);
   });
   p.setProperty('HEARING_PENDING', JSON.stringify(pending));

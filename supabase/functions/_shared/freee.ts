@@ -12,7 +12,7 @@ async function token(): Promise<string> {
   const { data } = await sb.from("oauth_tokens").select("*").eq("provider", "freee").maybeSingle();
   if (data?.access_token && new Date(data.expires_at).getTime() > Date.now() + 60_000) return data.access_token;
   const refresh = data?.refresh_token ?? Deno.env.get("FREEE_REFRESH_TOKEN");
-  if (!refresh) throw new Error("freee のリフレッシュトークンがありません（FREEE_REFRESH_TOKEN を入れてください）");
+  if (!refresh) throw new Error("freee とまだつながっていません。deal-flow の ?freee=login を開いて許可してください");
   const res = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -31,6 +31,41 @@ async function token(): Promise<string> {
   });
   if (error) throw error;
   return t.access_token;
+}
+
+const REDIRECT = () => `${Deno.env.get("SUPABASE_URL")}/functions/v1/deal-flow`;
+
+/** freee の連携の許可画面へのリンク。開いた人の freee の権限で動くようになる（なりすまし防止の合言葉 state を控える） */
+export async function loginUrl(): Promise<string> {
+  const state = crypto.randomUUID();
+  const { error } = await db().from("oauth_tokens").upsert({ provider: "freee_state", access_token: state, expires_at: new Date(Date.now() + 600_000).toISOString() });
+  if (error) throw error;
+  return "https://accounts.secure.freee.co.jp/public_api/authorize?" + new URLSearchParams({
+    client_id: Deno.env.get("FREEE_CLIENT_ID")!, redirect_uri: REDIRECT(), response_type: "code", state, prompt: "select_company",
+  });
+}
+
+/** 許可のあと freee から戻ってきたとき：鍵を受け取って oauth_tokens 表に控える */
+export async function finishLogin(code: string, state: string): Promise<void> {
+  const sb = db();
+  const { data: s } = await sb.from("oauth_tokens").select("*").eq("provider", "freee_state").maybeSingle();
+  if (!s || s.access_token !== state || new Date(s.expires_at).getTime() < Date.now()) throw new Error("リンクの期限が切れています。もう一度ログイン用のリンクから開いてください");
+  const res = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code", code, redirect_uri: REDIRECT(),
+      client_id: Deno.env.get("FREEE_CLIENT_ID")!, client_secret: Deno.env.get("FREEE_CLIENT_SECRET")!,
+    }),
+  });
+  const t = await res.json();
+  if (!res.ok) throw new Error(`freee の認証に失敗しました：${t.error_description ?? t.error ?? res.status}`);
+  const { error } = await sb.from("oauth_tokens").upsert({
+    provider: "freee", access_token: t.access_token, refresh_token: t.refresh_token,
+    expires_at: new Date(Date.now() + t.expires_in * 1000).toISOString(),
+  });
+  if (error) throw error;
+  await sb.from("oauth_tokens").delete().eq("provider", "freee_state");
 }
 
 async function fr<T>(method: string, url: string, body?: unknown): Promise<T> {

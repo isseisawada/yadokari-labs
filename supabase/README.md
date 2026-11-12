@@ -91,6 +91,6 @@ deno check supabase/functions/quote-hubspot/index.ts supabase/functions/slack-ap
 | 秘密情報 | 入れると | 待ち |
 | --- | --- | --- |
 | `BAKURAKU_API_TOKEN` | バクラクに本物の申請を作る（申請の作り方の部分は、仕様書が届いたら差し替え） | LayerX との API 契約と仕様書 |
-| `FREEE_CLIENT_ID` / `FREEE_CLIENT_SECRET` / `FREEE_REFRESH_TOKEN` | freee に本物の案件番号・請求書の下書きを作る（鍵の更新は `oauth_tokens` 表に控える） | freee の書き込み権限（木村さん）と連携用アプリ |
+| `FREEE_CLIENT_ID` / `FREEE_CLIENT_SECRET` | freee に本物の案件番号・請求書の下書きを作る。入れたあと https://bvwyyocqynbftjnkzsvw.supabase.co/functions/v1/deal-flow?freee=login を開いて許可すると、鍵は `oauth_tokens` 表に控えられ、以後は自動で更新される | freee の書き込み権限と連携用アプリ |
 
 承認の結果を定期的に見に行く仕組み（pg_cron で `deal-flow` の `poll` を10分おき）は、本物のバクラクにつなぐときに入れます。

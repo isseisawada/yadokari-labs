@@ -2,6 +2,7 @@
 import { cors, db, json } from "../_shared/env.ts";
 import { bakurakuMock, mockDecide } from "../_shared/bakuraku.ts";
 import { poll, startOrder } from "../_shared/flow.ts";
+import { finishLogin, freeeMock, loginUrl } from "../_shared/freee.ts";
 
 type Body = { action: "poll" | "start" | "mock-decide" | "status" | "setup"; quoteId?: string; ns?: string; dealId?: string; app?: "order" | "delivery"; decision?: "approved" | "rejected" };
 
@@ -56,6 +57,7 @@ async function handle(b: Body) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  if (req.method === "GET") return await freeeLogin(new URL(req.url));
   try {
     return json(await handle(await req.json()));
   } catch (e) {
@@ -63,3 +65,18 @@ Deno.serve(async (req) => {
     return json({ error: e instanceof Error ? e.message : String(e) }, 400);
   }
 });
+
+/** freee とつなぐ：?freee=login で許可画面へ、許可のあと freee が ?code= 付きで戻してくる */
+async function freeeLogin(u: URL): Promise<Response> {
+  const page = (msg: string, status = 200) =>
+    new Response(`<!doctype html><meta charset="utf-8"><p style="font:16px sans-serif;padding:24px">${msg.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}</p>`, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  try {
+    if (freeeMock()) return page("先に Supabase の秘密情報に FREEE_CLIENT_ID と FREEE_CLIENT_SECRET を入れてください", 400);
+    if (u.searchParams.get("freee") === "login") return Response.redirect(await loginUrl(), 302);
+    const code = u.searchParams.get("code"), state = u.searchParams.get("state");
+    if (code && state) { await finishLogin(code, state); return page("freee とつながりました。この画面は閉じて大丈夫です"); }
+    return page(u.searchParams.get("error_description") ?? "不明な呼び出しです", 400);
+  } catch (e) {
+    return page(e instanceof Error ? e.message : String(e), 400);
+  }
+}

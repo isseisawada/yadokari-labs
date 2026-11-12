@@ -68,8 +68,8 @@ Deno.serve(async (req) => {
 
 /** freee とつなぐ：?freee=login で許可画面へ、許可のあと freee が ?code= 付きで戻してくる */
 async function freeeLogin(u: URL): Promise<Response> {
-  const page = (msg: string, status = 200) =>
-    new Response(`<!doctype html><meta charset="utf-8"><p style="font:16px sans-serif;padding:24px">${msg.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}</p>`, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  // Supabase の標準の URL は HTML を出せない（text/plain にされる）ので、文字だけで返す
+  const page = (msg: string, status = 200) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   try {
     if (freeeMock()) return page("先に Supabase の秘密情報に FREEE_CLIENT_ID と FREEE_CLIENT_SECRET を入れてください", 400);
     if (u.searchParams.get("freee") === "login") return Response.redirect(await loginUrl(), 302);

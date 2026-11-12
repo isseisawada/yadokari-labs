@@ -43,7 +43,7 @@ export async function pipelineStages(pipelineId: string): Promise<{ id: string; 
 }
 
 /** 取引の明細を入れ替える（前の明細は消す） */
-export async function replaceLineItems(dealId: string, items: { name: string; price: string; quantity: string }[]) {
+export async function replaceLineItems(dealId: string, items: { name: string; price: string; quantity: string; discount?: string }[]) {
   const assoc = await hs<{ results: { toObjectId: number }[] }>(
     "GET",
     `/crm/v4/objects/deals/${dealId}/associations/line_items?limit=500`,

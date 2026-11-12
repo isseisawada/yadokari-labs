@@ -23,11 +23,10 @@ Deno.test("例外はコーポレートにも回る", () => {
   assertEquals(approvalSteps({ quote: q({ marginPct: 29.9 }), terms: { kind: "lump" }, newCustomer: false }, rules), ["manager", "corporate"]);
 });
 
-Deno.test("明細は社内向けの行を除き、値引きはマイナス", () => {
-  assertEquals(lineItems(q({ discount: 200_000 })), [
-    { name: "本体｜ROADIE", price: "5000000", quantity: "1" },
-    { name: "値引き", price: "-200000", quantity: "1" },
-  ]);
+Deno.test("明細は社内向けの行を除き、値引きは一番大きい行の値引き額に入れる（マイナスの金額は使わない）", () => {
+  const items = lineItems(q({ discount: 200_000 }));
+  assertEquals(items, [{ name: "本体｜ROADIE", price: "5000000", quantity: "1", discount: "200000" }]);
+  assertEquals(items.some((i) => Number(i.price) < 0), false);
 });
 
 Deno.test("取引の項目", () => {

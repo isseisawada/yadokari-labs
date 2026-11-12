@@ -77,3 +77,20 @@ settings:
 deno test supabase/functions/_shared/logic_test.ts
 deno check supabase/functions/quote-hubspot/index.ts supabase/functions/slack-approval/index.ts
 ```
+
+## 受注〜納品〜請求（deal-flow、11/12 追加・テスト中）
+
+見積もりの最後の承認のあと、`slack-approval` が受注稟議の下書きを作り、取引を「A.契約締結」にします。その先は `deal-flow` が進めます。
+
+1. 受注稟議が承認される → 案件番号（仮の形「H-取引ID」）を freee のセグメント1に登録、着手金の請求書を freee請求書に下書き、取引を「確定」に、納品完了報告の下書きを作る
+2. 納品完了報告が承認される → 残金（一括なら全額）の請求書を freee請求書に下書き、取引に納品日を入れる
+3. 節目ごとに承認用のチャンネルにお知らせ。freee に取引先が無いときは止まって知らせ、登録されたら続く
+
+鍵が無いあいだは、バクラクと freee は「にせもの」（`integration_mocks` 表に記録するだけ）で動きます。テストページの確定画面の「受注〜請求（テスト）」から、にせものの申請を承認できます。
+
+| 秘密情報 | 入れると | 待ち |
+| --- | --- | --- |
+| `BAKURAKU_API_TOKEN` | バクラクに本物の申請を作る（申請の作り方の部分は、仕様書が届いたら差し替え） | LayerX との API 契約と仕様書 |
+| `FREEE_CLIENT_ID` / `FREEE_CLIENT_SECRET` / `FREEE_REFRESH_TOKEN` | freee に本物の案件番号・請求書の下書きを作る（鍵の更新は `oauth_tokens` 表に控える） | freee の書き込み権限（木村さん）と連携用アプリ |
+
+承認の結果を定期的に見に行く仕組み（pg_cron で `deal-flow` の `poll` を10分おき）は、本物のバクラクにつなぐときに入れます。

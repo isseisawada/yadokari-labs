@@ -3,9 +3,10 @@ import { approvers, db } from "../_shared/env.ts";
 import { dealUrl, pipelineStages, getDeal, updateDeal } from "../_shared/hubspot.ts";
 import { dealProperties, stageIdByPrefix, type PaymentTerms, type Quote } from "../_shared/logic.ts";
 import { approvalBlocks, slack, verifySlack } from "../_shared/slack.ts";
+import { startOrder } from "../_shared/flow.ts";
 
 type Link = {
-  quote_id: string; hubspot_deal_id: string; status: string; steps: string[]; reasons: string[];
+  quote_id: string; ns: string; hubspot_deal_id: string; status: string; steps: string[]; reasons: string[];
   quote: Quote; payment_terms: PaymentTerms; slack_channel: string; slack_ts: string;
 };
 
@@ -53,7 +54,14 @@ async function decide(user: string, action: string, value: { q: string; s: "mana
     ...(stage ? { dealstage: stage } : {}),
   });
   await sb.from("quote_links").update({ status: "approved", updated_at: new Date().toISOString() }).eq("quote_id", link.quote_id);
-  return { done: true, text: `<@${user}> が承認しました。取引を「B.クロージング」にしました` };
+  // 続けて受注稟議の下書きを作る。失敗しても承認は取り消さない
+  let after = "受注稟議の下書きも作りました";
+  try {
+    await startOrder(link);
+  } catch (e) {
+    after = `受注稟議の下書きは作れませんでした：${e instanceof Error ? e.message : String(e)}`;
+  }
+  return { done: true, text: `<@${user}> が承認しました。取引を「B.クロージング」にしました。${after}` };
 }
 
 Deno.serve(async (req) => {

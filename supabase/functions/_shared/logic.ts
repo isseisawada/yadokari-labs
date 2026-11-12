@@ -65,14 +65,18 @@ export function dealProperties(q: Quote, terms: PaymentTerms, status: string): R
   };
 }
 
-/** 取引の明細。お客様向けの行だけ。値引きはマイナスの行で入れる */
-export function lineItems(q: Quote): { name: string; price: string; quantity: string }[] {
-  const items = q.sections.flatMap((s) =>
+/** 取引の明細。お客様向けの行だけ。HubSpot はマイナスの金額を入れられないので、値引きは一番大きい行の discount（値引き額）に入れる */
+export function lineItems(q: Quote): { name: string; price: string; quantity: string; discount?: string }[] {
+  const items: { name: string; price: string; quantity: string; discount?: string }[] = q.sections.flatMap((s) =>
     s.lines
-      .filter((l) => !l.internalOnly && yen(l.val) !== 0)
+      .filter((l) => !l.internalOnly && yen(l.val) > 0)
       .map((l) => ({ name: `${s.title}｜${l.name}`.slice(0, 250), price: String(yen(l.val)), quantity: "1" })),
   );
-  if ((q.discount ?? 0) > 0) items.push({ name: "値引き", price: String(-yen(q.discount!)), quantity: "1" });
+  const disc = yen(q.discount ?? 0);
+  if (disc > 0 && items.length) {
+    const top = items.reduce((a, b) => (Number(b.price) > Number(a.price) ? b : a));
+    top.discount = String(disc);
+  }
   return items;
 }
 

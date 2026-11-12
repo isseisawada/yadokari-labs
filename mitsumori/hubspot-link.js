@@ -5,7 +5,7 @@
 (function () {
   if (typeof IS_TEST === 'undefined' || !IS_TEST) return;   // 本番ページでは何もしない
 
-  var API = SUPABASE_URL + '/functions/v1/quote-hubspot';
+  var FN = SUPABASE_URL + '/functions/v1/';
   var KEY = 'hs_link_v1';
   var st = load();
 
@@ -33,14 +33,16 @@
       estimate: { status: 'estimate' },
       confirm: { status: 'pending', steps: reasons.length ? ['manager', 'corporate'] : ['manager'], reasons: reasons },
       status: { status: 'approved' },
-    }[body.action];
+      'mock-decide': { results: [{ step: body.app === 'delivery' ? 'on_delivered' : 'on_ordered' }] },
+      flow: { status: 'delivery_pending', project_no: 'H-demo1' },
+    }[body.action === 'status' && body.dealId ? 'flow' : body.action];
     return new Promise(function (ok) { setTimeout(function () { ok(res); }, 400); });
   }
 
-  function call(body) {
+  function call(body, fn) {
     body.ns = NS;
     if (DEMO) return demo(body);
-    return fetch(API, {
+    return fetch(FN + (fn || 'quote-hubspot'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
       body: JSON.stringify(body),
@@ -157,6 +159,31 @@
     return frag;
   };
 
+  // 見積もりが承認されたあとの「受注稟議 → 納品完了報告 → 請求書」をテストで進める（バクラク・freee はにせもの）
+  function flowPanel(dealId) {
+    var p = h('div', { style: 'margin-top:10px;padding-top:8px;border-top:1px dashed #e0ddd5' },
+      '<b>受注〜請求（テスト）</b><div style="font-size:12px;color:#666">Slack で最後の承認をすると、受注稟議の下書きができます。バクラクと freee はまだにせものです</div>');
+    var out = h('div', { style: 'font-size:12px;margin-top:4px' });
+    var LABEL = { order_pending: '受注稟議の承認待ち', order_rejected: '受注稟議が差し戻し', delivery_pending: '納品完了報告の承認待ち（着手金の請求書は下書き済み）', delivery_rejected: '納品完了報告が差し戻し', done: '完了（残金の請求書を下書き済み）' };
+    function show() {
+      call({ action: 'status', dealId: dealId }, 'deal-flow').then(function (s) {
+        out.textContent = s.status ? '状態：' + (LABEL[s.status] || s.status) + '（案件番号 ' + s.project_no + '）' + (s.last_error ? '／止まっている理由：' + s.last_error : '') : 'まだ始まっていません（Slack で最後の承認を）';
+      }).catch(function (e) { out.textContent = e.message; });
+    }
+    function btn(label, body) {
+      var b = h('button', { type: 'button', class: 'btn-b', style: 'margin-top:6px;display:block' }, label);
+      b.onclick = function () { out.textContent = '進めています…'; call(body, 'deal-flow').then(show).catch(function (e) { out.textContent = e.message; }); };
+      p.appendChild(b);
+    }
+    btn('受注稟議を承認する（にせもの）', { action: 'mock-decide', dealId: dealId, app: 'order', decision: 'approved' });
+    btn('納品完了報告を承認する（にせもの）', { action: 'mock-decide', dealId: dealId, app: 'delivery', decision: 'approved' });
+    var s = h('button', { type: 'button', class: 'btn-b', style: 'margin-top:6px;display:block' }, '流れの状態を見る');
+    s.onclick = show;
+    p.appendChild(s);
+    p.appendChild(out);
+    return p;
+  }
+
   // 「見積もりを確定」→ 承認依頼
   var origComplete = window.showCompletionFromData;
   window.showCompletionFromData = function (q, saveToHistory) {
@@ -178,6 +205,7 @@
         }).catch(function (e) { chk.textContent = e.message; });
       };
       box.appendChild(chk);
+      box.appendChild(flowPanel(st.deal.id));
     }).catch(function (e) { box.textContent = '承認依頼に失敗しました：' + e.message; });
     return r;
   };

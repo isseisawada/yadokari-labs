@@ -425,38 +425,28 @@ function hearings_(p, keys, ss, master) {
 function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
   const ch = keys.getProperty('HEARING_CHANNEL');
   const pending = JSON.parse(p.getProperty('HEARING_PENDING') || '{}'); // 聞き返し中：投稿ts → 最後に見た返信ts
-  const ask = (ts, missing, again) => {
-    const msg = again // 聞き返すのは1回だけ。返事をもらったら、足りなくても記録して終える
-      ? `おおきに！<${sheetUrl}|管理表>に追記しときました。` + (missing.length ? `（「${missing.join('」「')}」はわからんままで記録しときました）` : '')
-      : missing.length
-      ? `おおきに！記録しときました。あと「${missing.join('」「')}」だけ教えてもらえます？このスレッドに返信してもろたら追記しときます。`
-      : `おおきに！<${sheetUrl}|管理表>に記録しときました。`;
-    return slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: ts, text: msg }).ts;
-  };
+  const post = (ts, text) => slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: ts, text }).ts;
 
-  // 聞き返したスレッドに返信が来ていたら、元の投稿と合わせて読み直す
+  // 自治体がわからんときだけ聞き返した。投稿した本人がそのスレッドに返信したら1回だけ読み直す（ほかの人の雑談には反応しない）
   Object.keys(pending).forEach(ts => {
     const msgs = slackApi_(keys, 'conversations.replies', { channel: ch, ts }).messages || [];
-    const fresh = msgs.filter(m => !m.bot_id && m.ts !== ts && Number(m.ts) > Number(pending[ts]));
+    const fresh = msgs.filter(m => !m.bot_id && m.ts !== ts && m.user === msgs[0].user && Number(m.ts) > Number(pending[ts]));
     if (!fresh.length) return;
-    // 質問も渡す（「つかぼし様です」だけの返事が、何への答えかわかるように）
-    const text = msgs.map(m => m.bot_id ? `（記録係からの質問）${m.text}` : m.text).join('\n');
-    const missing = recordHearing_(sheet, masterRows, keys, ch, msgs[0], text) || [];
-    ask(ts, missing, true);
+    // 質問も渡す（自治体名だけの返事が、何への答えかわかるように）
+    const text = msgs.filter(m => m.bot_id || m.user === msgs[0].user).map(m => m.bot_id ? `（記録係からの質問）${m.text}` : m.text).join('\n');
+    if (recordHearing_(sheet, masterRows, keys, ch, msgs[0], text)) post(ts, `おおきに！<${sheetUrl}|管理表>に追記しときました。`);
     delete pending[ts];
   });
 
-  // 新しい投稿
+  // 新しい投稿：記録して1行だけ返す。足りない項目は管理表に「未記入」と残すだけで、聞き返さない
   const msgs = (slackApi_(keys, 'conversations.history', { channel: ch, oldest: p.getProperty('HEARING_TS') || '0', limit: 100 }).messages || [])
     .filter(m => !m.bot_id && (!m.subtype || m.subtype === 'file_share') && (!m.thread_ts || m.thread_ts === m.ts))
     .filter(m => !isNotice_(m.text))
     .sort((a, b) => Number(a.ts) - Number(b.ts));
   msgs.forEach(m => {
     const missing = recordHearing_(sheet, masterRows, keys, ch, m, m.text);
-    if (missing) {
-      const asked = ask(m.ts, missing);
-      if (missing.length) pending[m.ts] = asked;
-    }
+    if (missing && missing.includes('自治体')) pending[m.ts] = post(m.ts, 'おおきに！どこの自治体の話か、このスレッドで教えてもらえます？');
+    else if (missing) post(m.ts, `おおきに！<${sheetUrl}|管理表>に記録しときました。`);
     p.setProperty('HEARING_TS', m.ts);
   });
   p.setProperty('HEARING_PENDING', JSON.stringify(pending));
@@ -477,9 +467,10 @@ function recordHearing_(sheet, masterRows, keys, ch, root, text) {
   const last = lastRow_(sheet);
   const at = sheet.getRange(2, 1, Math.max(last - 1, 1), 1).getValues().findIndex(r => r[0] === id);
   const range = sheet.getRange(at >= 0 ? at + 2 : last + 1, 1, 1, 22);
+  const merged = at >= 0 ? mergeHearing_(range.getValues()[0], row) : row;
   range.offset(0, 20, 1, 1).setNumberFormat('@'); // 団体コードの先頭の0を残す
-  range.setValues([row]);
-  return missing;
+  range.setValues([merged]);
+  return merged[21] ? merged[21].replace('未記入：', '').split('、') : [];
 }
 
 // A列（記録ID）が入っている最後の行。getLastRow は空に見える行まで数えることがあり、追記が離れた行に飛ぶため
@@ -498,6 +489,15 @@ function isNotice_(text) {
 // 通知と同じチャンネルなので、雑談（自治体名も役所の回答も無い投稿）は取り込まない
 function isHearing_(h) {
   return !!((h.pref || h.city) || h.q1_raw);
+}
+
+// 同じ投稿を読み直したとき：すでに入っている欄（人が手で直した欄を含む）はそのまま、空の欄だけ埋める。未記入の欄は合わせて直す
+function mergeHearing_(old, row) {
+  const m = old.map((v, i) => v !== '' && i !== 21 ? v : row[i]);
+  const miss = [['自治体', m[2] || m[3]], ['相談先の課', m[5]], ['先方の担当者名', m[7]], ['対象案件', m[9]],
+    ['結論（車両扱いでよいか）', m[12] && !/^不明/.test(m[12])]].filter(x => !x[1]).map(x => x[0]);
+  m[21] = miss.length ? '未記入：' + miss.join('、') : '';
+  return m;
 }
 
 function missingOf_(h) {

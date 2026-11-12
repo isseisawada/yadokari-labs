@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_, isNotice_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { mergeHearing_, robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_, isNotice_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -191,22 +191,34 @@ assert.ok(f.isNotice_('<!here> 八王子市の件'));
 assert.ok(!f.isNotice_('八王子市の建築指導課キシさんに電話。車両扱いでOK'));
 assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
 
-// 聞き返しは1回だけ：返事が来たら、まだ足りなくても記録して終える（質問も一緒に読ませる）
+// Slack の取り込み：聞き返すのは自治体がわからんときだけ。返事は投稿した本人のものだけ読む
 {
   const posted = [], seen = [];
+  let replies = [{ ts: '100.1', user: 'U1', text: '建築審査課に電話' }, { ts: '100.2', bot_id: 'B', text: 'どこの自治体の話か' }, { ts: '100.3', user: 'U2', text: '<@U3> この件' }];
+  let history = [{ ts: '300.1', user: 'U1', text: '熊谷市 建築審査課' }];
   const props = { HEARING_CHANNEL: 'C1', HEARING_PENDING: JSON.stringify({ '100.1': '100.2' }), HEARING_TS: '200' };
   const p = { getProperty: k => props[k], setProperty: (k, v) => { props[k] = v; } };
-  ctx.slackApi_ = (keys, method, q) => method === 'conversations.replies'
-    ? { messages: [{ ts: '100.1', text: '熊谷市 建築審査課' }, { ts: '100.2', bot_id: 'B', text: 'あと「先方の担当者名」だけ' }, { ts: '100.3', text: 'つかぼし様です' }] }
-    : method === 'conversations.history' ? { messages: [] } : (posted.push(q.text), { ts: '100.4' });
+  ctx.slackApi_ = (keys, method, q) => method === 'conversations.replies' ? { messages: replies }
+    : method === 'conversations.history' ? { messages: history } : (posted.push(q.text), { ts: '9.9' });
   ctx.recordHearing_ = (s, m, k, ch, root, text) => (seen.push(text), ['先方の担当者名']);
   vm.runInContext('this.intakeSlack_ = intakeSlack_;', ctx);
   ctx.intakeSlack_(p, p, null, [], 'URL');
-  assert.ok(/（記録係からの質問）あと「先方の担当者名」だけ\nつかぼし様です/.test(seen[0]));
-  assert.ok(/追記しときました/.test(posted[0]) && !/教えてもらえます/.test(posted[0]));
+  assert.deepStrictEqual(seen, ['熊谷市 建築審査課']); // 別の人の返信には反応しない
+  assert.ok(/記録しときました/.test(posted[0]) && !/教えて/.test(posted[0])); // 担当者名が無くても聞き返さない
+  assert.ok(JSON.parse(props.HEARING_PENDING)['100.1']);
+  replies = replies.concat([{ ts: '100.4', user: 'U1', text: '熊谷市です' }]); history = []; posted.length = seen.length = 0;
+  ctx.intakeSlack_(p, p, null, [], 'URL');
+  assert.ok(/（記録係からの質問）どこの自治体の話か\n熊谷市です/.test(seen[0]) && !/U3/.test(seen[0]));
+  assert.ok(/追記しときました/.test(posted[0]));
   assert.strictEqual(props.HEARING_PENDING, '{}');
 }
-
+// 読み直しても、人が手で直した欄は残す
+{
+  const old = Array(22).fill(''); old[3] = '熊谷市'; old[7] = 'つかぼし様'; old[12] = '不可'; old[21] = '未記入：先方の担当者名';
+  const row = Array(22).fill(''); row[2] = '埼玉県'; row[3] = '熊谷市'; row[5] = '建築審査課'; row[12] = '条件付き可';
+  const m = f.mergeHearing_(old, row);
+  assert.deepStrictEqual([m[2], m[5], m[7], m[12], m[21]], ['埼玉県', '建築審査課', 'つかぼし様', '不可', '未記入：対象案件']);
+}
 assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ車両扱い）', '掲載なし（確認済）'));
 
 console.log('ok');

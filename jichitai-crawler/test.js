@@ -191,4 +191,20 @@ assert.ok(f.isNotice_('<!here> 八王子市の件'));
 assert.ok(!f.isNotice_('八王子市の建築指導課キシさんに電話。車両扱いでOK'));
 assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
 
+// 聞き返しは1回だけ：返事が来たら、まだ足りなくても記録して終える（質問も一緒に読ませる）
+{
+  const posted = [], seen = [];
+  const props = { HEARING_CHANNEL: 'C1', HEARING_PENDING: JSON.stringify({ '100.1': '100.2' }), HEARING_TS: '200' };
+  const p = { getProperty: k => props[k], setProperty: (k, v) => { props[k] = v; } };
+  ctx.slackApi_ = (keys, method, q) => method === 'conversations.replies'
+    ? { messages: [{ ts: '100.1', text: '熊谷市 建築審査課' }, { ts: '100.2', bot_id: 'B', text: 'あと「先方の担当者名」だけ' }, { ts: '100.3', text: 'つかぼし様です' }] }
+    : method === 'conversations.history' ? { messages: [] } : (posted.push(q.text), { ts: '100.4' });
+  ctx.recordHearing_ = (s, m, k, ch, root, text) => (seen.push(text), ['先方の担当者名']);
+  vm.runInContext('this.intakeSlack_ = intakeSlack_;', ctx);
+  ctx.intakeSlack_(p, p, null, [], 'URL');
+  assert.ok(/（記録係からの質問）あと「先方の担当者名」だけ\nつかぼし様です/.test(seen[0]));
+  assert.ok(/追記しときました/.test(posted[0]) && !/教えてもらえます/.test(posted[0]));
+  assert.strictEqual(props.HEARING_PENDING, '{}');
+}
+
 console.log('ok');

@@ -425,8 +425,10 @@ function hearings_(p, keys, ss, master) {
 function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
   const ch = keys.getProperty('HEARING_CHANNEL');
   const pending = JSON.parse(p.getProperty('HEARING_PENDING') || '{}'); // 聞き返し中：投稿ts → 最後に見た返信ts
-  const ask = (ts, missing) => {
-    const msg = missing.length
+  const ask = (ts, missing, again) => {
+    const msg = again // 聞き返すのは1回だけ。返事をもらったら、足りなくても記録して終える
+      ? `おおきに！<${sheetUrl}|管理表>に追記しときました。` + (missing.length ? `（「${missing.join('」「')}」はわからんままで記録しときました）` : '')
+      : missing.length
       ? `おおきに！記録しときました。あと「${missing.join('」「')}」だけ教えてもらえます？このスレッドに返信してもろたら追記しときます。`
       : `おおきに！<${sheetUrl}|管理表>に記録しときました。`;
     return slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: ts, text: msg }).ts;
@@ -434,12 +436,14 @@ function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
 
   // 聞き返したスレッドに返信が来ていたら、元の投稿と合わせて読み直す
   Object.keys(pending).forEach(ts => {
-    const msgs = (slackApi_(keys, 'conversations.replies', { channel: ch, ts }).messages || []).filter(m => !m.bot_id);
-    const fresh = msgs.filter(m => m.ts !== ts && Number(m.ts) > Number(pending[ts]));
+    const msgs = slackApi_(keys, 'conversations.replies', { channel: ch, ts }).messages || [];
+    const fresh = msgs.filter(m => !m.bot_id && m.ts !== ts && Number(m.ts) > Number(pending[ts]));
     if (!fresh.length) return;
-    const missing = recordHearing_(sheet, masterRows, keys, ch, msgs[0], msgs.map(m => m.text).join('\n'));
-    ask(ts, missing);
-    if (missing.length) pending[ts] = fresh[fresh.length - 1].ts; else delete pending[ts];
+    // 質問も渡す（「つかぼし様です」だけの返事が、何への答えかわかるように）
+    const text = msgs.map(m => m.bot_id ? `（記録係からの質問）${m.text}` : m.text).join('\n');
+    const missing = recordHearing_(sheet, masterRows, keys, ch, msgs[0], text) || [];
+    ask(ts, missing, true);
+    delete pending[ts];
   });
 
   // 新しい投稿
@@ -551,7 +555,8 @@ const SYSTEM_H = `営業担当が役所に電話でヒアリングした内容�
 
 - date: メモに相談日時があれば YYYY/MM/DD HH:mm（時刻が無ければ YYYY/MM/DD）。年が無ければ投稿日時の年から決める。メモに無ければ空欄。
 - pref / city: 都道府県名と市区町村名（「県庁」など県に聞いた場合は city を空欄）。
-- dept: 相談先の課。phone: 電話番号。contact: 先方の担当者名。case: 対象案件（案件名・お客様名など）。usage: 用途・設置条件（用途地域・市街化調整区域・自然公園など）。
+- dept: 相談先の課。phone: 電話番号。contact: 先方（役所側）の担当者名。課名・電話番号のそばに「〇〇様」「〇〇さん」と書かれた人名は、ひらがな・カタカナでも、複数でも担当者名として入れる（例「つかぼし様、おくざき様」）。お客様名とまぎらわしいときは、役所側の人として書かれているかで決める。case: 対象案件（案件名・お客様名など）。usage: 用途・設置条件（用途地域・市街化調整区域・自然公園など）。
+- メモの後ろに「（記録係からの質問）」と、その答えの返信が続くことがある。返信は、直前の質問の項目への答えとして読む。
 - q1_raw: 「トレーラーハウスを車両扱い（建築物でない扱い）にしてよいか」への役所の回答を、メモの言葉に近い形で。
 - conclusion: その結論を「可」「条件付き可」「不可」「個別判断」「不明」から。conclusion_note: 条件を20字以内で（例：一時設置のみ、車検必須）。無ければ空欄。
 - q2: 建築物扱いになるケース。q3: 自治体独自のルール。q4: 浄化槽の扱い。other: その他・備考。

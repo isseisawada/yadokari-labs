@@ -22,6 +22,7 @@ function onOpen() {
     .addItem('関東で試運転', 'pilotKanto')
     .addItem('今すぐ調べる（無料枠の範囲で）', 'runAllNow')
     .addItem('毎月の自動実行を開始', 'setup')
+    .addItem('コードを今すぐ更新', 'updateCodeNow')
     .addToUi();
 }
 
@@ -74,6 +75,7 @@ function tick() {
   const p = PropertiesService.getScriptProperties();
   const keys = PropertiesService.getUserProperties();
   const ss = SpreadsheetApp.getActive();
+  if (selfUpdate_(ss, p)) return lock.releaseLock(); // 入れ替えたら、この回は新しいコードに任せる
   const master = ss.getSheetByName(SHEET_MASTER);
   hearings_(p, keys, ss, master); // ヒアリングの取り込みと集計は毎回（公式情報の回が終わっていても）
 
@@ -332,6 +334,53 @@ function header_(res, name) {
   const h = res.getAllHeaders();
   const k = Object.keys(h).find(x => x.toLowerCase() === name.toLowerCase());
   return k ? String(h[k]) : '';
+}
+
+// ---- コードの自動更新 ----
+// Claude が澤田さんのドライブに「jichitai-crawler Code.gs <版> <sha256>」という名前でコードを置くと、次の回（30分以内）に
+// このプロジェクトのコードをそれに入れ替える。結果は管理表の隠し情報（デベロッパーメタデータ CODE_STATUS）に残す
+const CODE_FILE = 'jichitai-crawler Code.gs';
+
+function updateCodeNow() {
+  const ss = SpreadsheetApp.getActive();
+  ss.toast(selfUpdate_(ss, PropertiesService.getScriptProperties()) ? 'コードを新しい版に入れ替えました' : '新しい版はありません：' + codeStatus_(ss));
+}
+
+function selfUpdate_(ss, p) {
+  let f = null;
+  try {
+    const it = DriveApp.searchFiles(`title contains '${CODE_FILE}' and 'me' in owners and trashed = false`); // 自分のファイルだけ（人が置いたコードは動かさない）
+    while (it.hasNext()) { const x = it.next(); if (x.getName().startsWith(CODE_FILE + ' ') && (!f || x.getDateCreated() > f.getDateCreated())) f = x; }
+    if (!f) return false;
+    const [ver, hash] = f.getName().slice(CODE_FILE.length + 1).split(' ');
+    if (!ver || ver === p.getProperty('CODE_VER')) return false;
+    p.setProperty('CODE_VER', ver); // 失敗しても同じ版を何度も試さない
+    const code = f.getBlob().getDataAsString('UTF-8');
+    if (sha256_(code) !== hash) throw new Error('ファイルの中身が名前のハッシュと合わない');
+    if (!/function tick\(/.test(code)) throw new Error('このクローラーのコードではない');
+    const url = `https://script.googleapis.com/v1/projects/${ScriptApp.getScriptId()}/content`;
+    const headers = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+    const files = JSON.parse(UrlFetchApp.fetch(url, { headers }).getContentText()).files;
+    const js = files.filter(x => x.type === 'SERVER_JS');
+    if (js.length !== 1) throw new Error('コードのファイルが1つではない');
+    js[0].source = code;
+    UrlFetchApp.fetch(url, { method: 'put', contentType: 'application/json', payload: JSON.stringify({ files }), headers });
+    codeStatus_(ss, `反映済み ${ver} ${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm')}`);
+    return true;
+  } catch (e) {
+    codeStatus_(ss, `失敗 ${f ? f.getName() : ''} ${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm')}：${String(e).slice(0, 300)}`);
+    return false;
+  }
+}
+
+function codeStatus_(ss, text) {
+  const m = ss.createDeveloperMetadataFinder().withKey('CODE_STATUS').find()[0];
+  if (text === undefined) return m ? m.getValue() : '';
+  if (m) m.setValue(text); else ss.addDeveloperMetadata('CODE_STATUS', text);
+}
+
+function sha256_(v) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, v, Utilities.Charset.UTF_8).map(b => ((b + 256) % 256).toString(16).padStart(2, '0')).join('');
 }
 
 function md5_(v) {

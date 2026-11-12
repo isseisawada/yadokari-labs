@@ -221,4 +221,27 @@ assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
 }
 assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ車両扱い）', '掲載なし（確認済）'));
 
+// コードの自動更新：自分のドライブの最新の版を、ハッシュが合うときだけ入れ替える
+{
+  const crypto = require('crypto');
+  const code = 'function tick() {}\n// 新しい版\n';
+  const hash = crypto.createHash('sha256').update(code).digest('hex');
+  const file = (name, d) => ({ getName: () => name, getDateCreated: () => d, getBlob: () => ({ getDataAsString: () => code }) });
+  let files = [file(`jichitai-crawler Code.gs v1 ${hash}`, 2), file('jichitai-crawler Code.gs v0 x', 1)];
+  const put = [], meta = {};
+  ctx.DriveApp = { searchFiles: () => { let i = 0; return { hasNext: () => i < files.length, next: () => files[i++] }; } };
+  ctx.ScriptApp = { getScriptId: () => 'S', getOAuthToken: () => 't' };
+  ctx.UrlFetchApp = { fetch: (u, o) => o.method === 'put' ? put.push(JSON.parse(o.payload)) : { getContentText: () => JSON.stringify({ files: [{ name: 'appsscript', type: 'JSON', source: '{}' }, { name: '無題', type: 'SERVER_JS', source: 'old' }] }) } };
+  ctx.Utilities = { DigestAlgorithm: {}, Charset: {}, formatDate: () => 'D', computeDigest: (a, v) => [...crypto.createHash('sha256').update(v).digest()].map(b => b > 127 ? b - 256 : b) };
+  const ss = { createDeveloperMetadataFinder: () => ({ withKey: k => ({ find: () => meta[k] ? [{ getValue: () => meta[k], setValue: v => { meta[k] = v; } }] : [] }) }), addDeveloperMetadata: (k, v) => { meta[k] = v; } };
+  const props = {}; const p = { getProperty: k => props[k], setProperty: (k, v) => { props[k] = v; } };
+  vm.runInContext('this.selfUpdate_ = selfUpdate_;', ctx);
+  assert.ok(ctx.selfUpdate_(ss, p));
+  assert.deepStrictEqual(put[0].files.map(x => x.source), ['{}', code]); // 設定ファイルはそのまま、コードだけ入れ替え
+  assert.ok(/^反映済み v1/.test(meta.CODE_STATUS));
+  assert.ok(!ctx.selfUpdate_(ss, p)); // 同じ版は二度やらない
+  files = [file('jichitai-crawler Code.gs v2 deadbeef', 3)];
+  assert.ok(!ctx.selfUpdate_(ss, p) && put.length === 1 && /^失敗.*ハッシュ/.test(meta.CODE_STATUS)); // 壊れた写しは入れない
+}
+
 console.log('ok');

@@ -33,3 +33,11 @@ Deno.test("申請の状態から次の一手", () => {
   assertEquals(nextStep("done", "approved"), "wait");
   assertEquals(projectNo("123"), "H-123");
 });
+
+import { toAppStatus } from "./bakuraku.ts";
+Deno.test("バクラクの状態の読みかえ", () => {
+  assertEquals(toAppStatus("APPROVED"), "approved");
+  assertEquals(toAppStatus("REMANDED"), "rejected");
+  assertEquals(toAppStatus("DRAFT"), "pending");
+  assertEquals(toAppStatus("IN_PROGRESS"), "pending");
+});

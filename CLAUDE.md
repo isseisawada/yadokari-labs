@@ -385,7 +385,8 @@ python3 submit_expenses.py --month 8
   - Stripe 系（Anthropic 等）は Invoice と Receipt が両方付くので Receipt だけ残す
 - 検索の目安: `after:YYYY/MM/01 before:YYYY/MM+1/03 from:(invoice@mail.anthropic.com OR sride.co.jp OR stationwork.jp OR telecube.jp OR payments-noreply@google.com OR apple.com OR note.jp OR dropbox.com OR booking.com OR goinc.jp)` と、件名 `領収書 OR receipt OR 請求書 OR invoice`
 - 注意（2026年10月分で確認）:
-  - STATION WORK の領収書メールは利用の翌月に届くことがある（10/3 着が 9/9 利用分）→ 前月申請済みのものは除外
+  - **STATION WORK の領収書メールは、管理画面で「領収書発行」を押したときにだけ届く**（自動では来ない。2026-11 澤田さん訂正）。10/3 着の 9/9 利用分は、その日に発行したから。
+    発行日と利用日がずれるので、利用日で月を判定し、前月申請済みのものは除外
   - Google Cloud の月次請求書は ¥0 のことがある → 除外
   - Anthropic はカードが2枚。**Visa 5426 が立替（経費精算の対象）**、Visa 2240 は会社カードなので対象外（領収書PDFの Payment method で判定）
   - ドル払いの金額はカード明細の円額に合わせる（「ドル払い」の節）

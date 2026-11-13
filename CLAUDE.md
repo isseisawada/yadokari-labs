@@ -374,6 +374,7 @@ python3 submit_expenses.py --month 8
 
 **OpenAI・Anthropic・X Developer・Render・Neon・Railway・GitHub・Google Cloud は会社のカードで決済することになった**（2026-11 澤田さん）。
 **Catchy（株式会社デジタルレシピ、info@ 宛の Stripe 領収書、カード末尾 2001）も会社カード払い**なので対象外。
+→ Catchy は 2024年3月にメディア編集部向けに契約、2024年8月以降は利用の形跡なし。**2026-11-13 に澤田さんが管理画面でサブスク解約**。12/7 に請求が止まったか確認する（send_later trig_01XW8uRTqyQ2KFMB6LbnvHkA）。同時期契約の SAKUBUN（NOVEL株式会社）は 2024年8月に解約済み
 → 領収書を集めない・申請に入れない。立替（Visa 5426）で残る AI 系は **ChatGPT Plus（Apple）** だけ。
 → ドル払いの立替は Dropbox の年払い（更新月）くらいなので、カード明細のスクショはその月だけ。
 （10月分までの記述にある Anthropic / OpenAI 等の立替ルールは過去分の記録）

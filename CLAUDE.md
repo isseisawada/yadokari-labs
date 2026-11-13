@@ -528,13 +528,18 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 ### 2026-11-13 追加検証
 - ✅ `download_gmail_attachment` はクラウドで動く（GO の PDF 294KB を直接ファイルに保存できた）。25・28・1・2日の定期タスクはこれに切り替え済み
 - ❌ freee MCP にはファイル（領収書画像・PDF）をアップロードする機能が無い（JSON の POST/PUT/DELETE/GET のみ）
-- 💡 **freee のファイルボックスには「メール転送で取り込む専用アドレス」がある**（[freee ヘルプ](https://support.freee.co.jp/hc/ja/articles/203524410)。転送元は freee のメンバー登録済みアドレスである必要あり）
-  → 専用アドレスが分かれば：Gmail から領収書PDFを転送 → freee のファイルボックスに入る → freee MCP で receipt_id を引いて申請の明細に PUT で付ける、で **依頼文 C（Mac）が要らなくなる**（未検証）
+- ✅ **freee ファイルボックスへのメール取り込み（2026-11-13 に動作確認済み）**
+  - 宛先: `1751051196+256d@mail-receiver.freee.co.jp`（freee の[ファイルボックス](https://secure.freee.co.jp/receipts) →「ファイル設定」→「メールでfreeeにファイルを送る」）
+  - 送信元は sawada@（freee メンバー）。届いてから **約2分** で `GET /api/1/receipts`（origin=`mail`、description=`メールからの登録`）に出る
+  - 出てきた receipt_id を freee MCP で申請の明細（`receipt_id` / `sub_receipt_ids`）に付けられる（テスト申請 19840335 で確認 → 削除済み）
+  - **注意: 元メールを「転送」すると本文のロゴ画像（PNG）まで別ファイルとして取り込まれる**（GO の転送で PDF 1 + ロゴ 3）。
+    → 転送ではなく、PDF/写真だけを添付した新規メール（`send_message`）で送る。ゴミが入ったら `DELETE /api/1/receipts/{id}`
+  - これで **依頼文 C（Mac の submit_expenses.py）が不要になる**：領収書をメールで freee に送る → receipt_id を取得 → MCP で下書きに PUT
 - 💡 紙の写真を **件名「経費」で自分宛にメール**してもらえば、クラウドで読める（Dropbox は読めない）
 
 ### 改善の候補（優先順）
 1. **Gmail 添付は `download_gmail_attachment` に切り替え**（RAW の巨大JSONを経由しない）
-2. **freee への登録をクラウドで完結させる**：freee API のトークンを環境のネットワークシークレットとして持てれば、依頼文 C（Mac）が不要になる。ただしアクセストークンは6時間で切れるので、更新の仕組みが要る → 要検討
+2. ~~freee への登録をクラウドで完結させる~~ → ファイルボックスのメール取り込み + freee MCP で可能になった（2026-11-13）。定期タスク（1日・2日）をこの方式に切り替える
 3. **紙の写真をクラウドから読めるようにする**：Google ドライブなら読める（11/1 に確認）。Dropbox のままなら Mac 経由が続く
 4. **Mac の Remote Control が使えるようになれば**、依頼文 A・C も定期実行の中で動かせる（今は Mac 側がフォルダを提供していない。Claude アプリの更新や再登録で直るか要確認）
 5. ~~Dropbox の月フォルダは澤田さんが作る~~ → 25日の自動実行で翌月分を作る（2026-11-13 から）

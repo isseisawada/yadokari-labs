@@ -487,3 +487,42 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 - freee は明細ゼロの申請を作れない（400「Purchase linesを入力してください」）ので、**¥0 の仮行1つ**（説明「下書きベース（この行は登録時に置き換わる）」、テンプレート 289807）で3つ作る。タイトル「経費精算申請1/3」「2/3」「3/3」、draft
 - IDは `inputs_YYYYMM/freee_apps.json` に `{"base_ids":[…]}`
 - `submit_expenses.py` は freee_apps.json があれば、新規作成せず **PUT で順に中身を置き換える**（2026-11-13 に作成→PUT→削除で動作確認済み）。申請が4つ以上なら残りは新規作成、2つで済めば余ったベースを「削除してください」と表示
+
+## 自動実行でできること・できないこと（2026-11-13 の試運転の結果）
+
+25日の自動実行と同じ手順を 11/13 に手動で回した結果。
+
+### できること（クラウドの Claude だけで完結）
+| 作業 | どうやるか | 試運転の結果 |
+|---|---|---|
+| Gmail から領収書メールを探す | 差出人で絞った検索（`after:YYYY/MM/01 has:attachment from:(goinc.jp OR sride.co.jp OR stationwork.jp OR telecube.jp OR apple.com OR note.jp OR dropbox.com OR booking.com OR eki-net.com …)`） | ✅ 4件ヒット（下記の理由で11月分は0件） |
+| 添付PDFの保存 | `get_message(RAW)` → `save_mail_receipts.py`。**今後は `download_gmail_attachment`（2026-11 から使える）で直接取るほうが軽い** | ✅（10月分で実績あり） |
+| GO 一括PDFの分割 | `split_go_receipts.py` | ✅ |
+| 写真・PDF の読み取り | リポジトリにある画像を Claude が直接読む（OCR スクリプトは API キーが無いので使わない） | ✅ |
+| 参加者 | Google カレンダー | ✅ |
+| freee の下書きを作る・中身を置き換える・消す・状態を見る | freee MCP（POST / PUT / DELETE / GET `/api/1/expense_applications`） | ✅ 11月分のベース 19840067 / 19840068 / 19840069 を作成 |
+| Dropbox のファイル一覧 | `list_folder` | ✅（202611 フォルダはまだ無かった） |
+| Slack 投稿・git push | Slack MCP・git | ✅ |
+
+### できないこと（今の環境では無理）と、どうしているか
+| できないこと | 理由 | 今のやり方 |
+|---|---|---|
+| サイトにログインして取得・発行（Suica・Apple・テレキューブ/STATION WORK の発行・Amazon・note） | ブラウザが無い。Mac の Remote Control フォルダが「クラウドから使えない」状態 | 澤田さんが Mac の Claude に依頼文 A |
+| Dropbox の写真の中身を読む | ダウンロードURLがネットワーク制限で 403、`fetch` は画像非対応 | Mac の Claude がリポジトリにコピー（依頼文 A） |
+| Dropbox に PDF を書く・フォルダを作る | MCP はテキストしか作れない。フォルダ作成は毎回本人の確認が要る | 保存先はリポジトリ。月フォルダは澤田さんが作る |
+| freee に領収書ファイルを添付して登録 | freee のトークン（`.env`）が Mac にしか無い。MCP では画像の添付ができない | Mac の Claude に依頼文 C（`submit_expenses.py`） |
+| アプリでしか出せない領収書（GO・S.RIDE） | アプリ専用 | 澤田さんが月末にスマホで発行 |
+
+### 試運転で分かったこと
+- 11月に届いた GO・STATION WORK の領収書メール（11/1）は **10月利用分**（10月分で申請済み）→ 受信日ではなく**利用日で月を判定**し、申請済みは取り込まない
+- Anthropic の領収書（11/11、info@ 経由）→ 会社カード払いなので取り込まない
+- 株式会社デジタルレシピの領収書（11/6、info@ 経由、Stripe）→ 何のサービスか未確認。info@ 宛は会社の支払いの可能性が高い → **澤田さんに確認**
+- 「領収書 OR receipt」のような広い検索は 400件近く引っかかって使えない → 差出人で絞る
+- freee の申請番号は、消した下書きの番号が再利用される（テストで消した 1066 が 1/3 に付いた）。実害なし
+
+### 改善の候補（優先順）
+1. **Gmail 添付は `download_gmail_attachment` に切り替え**（RAW の巨大JSONを経由しない）
+2. **freee への登録をクラウドで完結させる**：freee API のトークンを環境のネットワークシークレットとして持てれば、依頼文 C（Mac）が不要になる。ただしアクセストークンは6時間で切れるので、更新の仕組みが要る → 要検討
+3. **紙の写真をクラウドから読めるようにする**：Google ドライブなら読める（11/1 に確認）。Dropbox のままなら Mac 経由が続く
+4. **Mac の Remote Control が使えるようになれば**、依頼文 A・C も定期実行の中で動かせる（今は Mac 側がフォルダを提供していない。Claude アプリの更新や再登録で直るか要確認）
+5. Dropbox の月フォルダ（`経費関連/YYYYMM/photo/`）は、25日の Slack 通知で「作ってください」と案内する

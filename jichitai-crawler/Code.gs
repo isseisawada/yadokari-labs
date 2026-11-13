@@ -75,7 +75,6 @@ function tick() {
   const p = PropertiesService.getScriptProperties();
   const keys = PropertiesService.getUserProperties();
   const ss = SpreadsheetApp.getActive();
-  if (selfUpdate_(ss, p)) return lock.releaseLock(); // 入れ替えたら、この回は新しいコードに任せる
   const master = ss.getSheetByName(SHEET_MASTER);
   hearings_(p, keys, ss, master); // ヒアリングの取り込みと集計は毎回（公式情報の回が終わっていても）
 
@@ -337,39 +336,43 @@ function header_(res, name) {
 }
 
 // ---- コードの自動更新 ----
-// Claude が澤田さんのドライブに「jichitai-crawler Code.gs <版> <sha256>」という名前でコードを置くと、次の回（30分以内）に
-// このプロジェクトのコードをそれに入れ替える。結果は管理表の隠し情報（デベロッパーメタデータ CODE_STATUS）に残す
+// Claude が澤田さんのドライブに「jichitai-crawler Code.gs <版> <sha256>」という名前でコードを置くと、次に動くときから
+// そのコードを読み込み、同じ名前の関数（tick・onOpen など）をそれに差し替えて動く。ここに貼ったコードは、読めないときの予備。
+// （Apps Script API で自分を書き換える方法は、自動で作られた Cloud プロジェクトで API をオンにできず使えなかった）
+// 結果は管理表の隠し情報（デベロッパーメタデータ CODE_STATUS）に残す
 const CODE_FILE = 'jichitai-crawler Code.gs';
 
 function updateCodeNow() {
-  const ss = SpreadsheetApp.getActive();
-  ss.toast(selfUpdate_(ss, PropertiesService.getScriptProperties()) ? 'コードを新しい版に入れ替えました' : '新しい版はありません：' + codeStatus_(ss));
+  SpreadsheetApp.getActive().toast('今のコード：' + (globalThis.CODE_LOADED || '貼ってある版（ドライブから読めていない）') + '\n' + codeStatus_(SpreadsheetApp.getActive()));
 }
 
-function selfUpdate_(ss, p) {
-  let f = null;
+// ドライブの最新の版を読み、入口の関数を差し替える。失敗したら貼ってある版のまま動く
+function loadLatest_() {
+  if (globalThis.CODE_LOADING) return; // 読み込んだコードの中のこの関数は動かさない
+  globalThis.CODE_LOADING = true;
+  let name = '';
   try {
+    let f = null;
     const it = DriveApp.searchFiles(`title contains '${CODE_FILE}' and 'me' in owners and trashed = false`); // 自分のファイルだけ（人が置いたコードは動かさない）
     while (it.hasNext()) { const x = it.next(); if (x.getName().startsWith(CODE_FILE + ' ') && (!f || x.getDateCreated() > f.getDateCreated())) f = x; }
-    if (!f) return false;
-    const [ver, hash] = f.getName().slice(CODE_FILE.length + 1).split(' ');
-    if (!ver || ver === p.getProperty('CODE_VER')) return false;
-    p.setProperty('CODE_VER', ver); // 失敗しても同じ版を何度も試さない
+    if (!f) return;
+    name = f.getName();
+    const [ver, hash] = name.slice(CODE_FILE.length + 1).split(' ');
     const code = f.getBlob().getDataAsString('UTF-8');
     if (sha256_(code) !== hash) throw new Error('ファイルの中身が名前のハッシュと合わない');
-    if (!/function tick\(/.test(code)) throw new Error('このクローラーのコードではない');
-    const url = `https://script.googleapis.com/v1/projects/${ScriptApp.getScriptId()}/content`;
-    const headers = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
-    const files = JSON.parse(UrlFetchApp.fetch(url, { headers }).getContentText()).files;
-    const js = files.filter(x => x.type === 'SERVER_JS');
-    if (js.length !== 1) throw new Error('コードのファイルが1つではない');
-    js[0].source = code;
-    UrlFetchApp.fetch(url, { method: 'put', contentType: 'application/json', payload: JSON.stringify({ files }), headers });
-    codeStatus_(ss, `反映済み ${ver} ${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm')}`);
-    return true;
+    const entries = [...code.matchAll(/^function ([A-Za-z]\w*)\(/gm)].map(m => m[1]).filter(n => !n.endsWith('_'));
+    if (!entries.includes('tick')) throw new Error('このクローラーのコードではない');
+    const fns = new Function(code + `\nreturn { ${entries.join(', ')} };`)();
+    entries.forEach(n => { globalThis[n] = fns[n]; });
+    globalThis.CODE_LOADED = ver;
+    const p = PropertiesService.getScriptProperties();
+    if (p.getProperty('CODE_VER') !== ver) {
+      p.setProperty('CODE_VER', ver);
+      codeStatus_(SpreadsheetApp.getActive(), `反映済み ${ver} ${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm')}`);
+    }
   } catch (e) {
-    codeStatus_(ss, `失敗 ${f ? f.getName() : ''} ${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm')}：${String(e).slice(0, 300)}`);
-    return false;
+    // 開いたときの onOpen などドライブを読めない場面もあるので、記録だけして貼ってある版で続ける
+    if (name) try { codeStatus_(SpreadsheetApp.getActive(), `失敗 ${name} ${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm')}：${String(e).slice(0, 300)}`); } catch (_) {}
   }
 }
 
@@ -623,3 +626,5 @@ const SCHEMA_H = {
 function month_() {
   return Utilities.formatDate(new Date(Date.now() - 23 * 24 * 3600 * 1000), 'Asia/Tokyo', 'yyyy-MM');
 }
+
+loadLatest_(); // ファイルの最後で：動くたびにまず最新の版を読む

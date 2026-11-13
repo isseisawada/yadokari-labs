@@ -1,10 +1,10 @@
 // 受注〜納品〜請求の流れの入口（定期実行・テストページから呼ぶ）
 import { cors, db, json } from "../_shared/env.ts";
-import { bakurakuMock, mockDecide } from "../_shared/bakuraku.ts";
+import { bakurakuMock, listForms, mockDecide } from "../_shared/bakuraku.ts";
 import { poll, startOrder } from "../_shared/flow.ts";
 import { finishLogin, freeeMock, loginUrl } from "../_shared/freee.ts";
 
-type Body = { action: "poll" | "start" | "mock-decide" | "status" | "setup"; quoteId?: string; ns?: string; dealId?: string; app?: "order" | "delivery"; decision?: "approved" | "rejected" };
+type Body = { action: "poll" | "start" | "mock-decide" | "status" | "setup" | "bakuraku-forms"; quoteId?: string; ns?: string; dealId?: string; app?: "order" | "delivery"; decision?: "approved" | "rejected" };
 
 async function handle(b: Body) {
   const ns = b.ns ?? "test";
@@ -35,6 +35,9 @@ async function handle(b: Body) {
       if (error) throw error;
       return data ?? { status: null };
     }
+    case "bakuraku-forms":
+      // 受注稟議・納品完了報告のフォームID と、汎用フォーム（OTHER）かどうかを確かめる
+      return { forms: await listForms() };
     case "setup": {
       // 取引の項目「案件番号」「納品日」を足す（何度呼んでも同じ）
       const out: Record<string, number> = {};

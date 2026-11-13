@@ -58,3 +58,19 @@ export async function mockDecide(id: string, status: "approved" | "rejected") {
   const { error } = await db().from("integration_mocks").update({ status }).eq("id", Number(id)).like("kind", "bakuraku_%");
   if (error) throw error;
 }
+
+/** 鍵が入ったら最初に使う：最近の申請から、フォームの ID・名前・種類を拾う（受注稟議・納品完了報告のフォームID を探すため） */
+export async function listForms(): Promise<{ id: string; name: string; formType: string; count: number }[]> {
+  if (bakurakuMock()) throw new Error("バクラクの鍵（BAKURAKU_API_TOKEN）が入っていません");
+  const forms = new Map<string, { id: string; name: string; formType: string; count: number }>();
+  for (let offset = 0; offset < 500; offset += 100) {
+    const r = await bk<{ requests: { form: { id: string; name: string; formType: string } }[] }>("GET", `/requests?limit=100&offset=${offset}`);
+    for (const { form } of r.requests) {
+      const f = forms.get(form.id) ?? { ...form, count: 0 };
+      f.count++;
+      forms.set(form.id, f);
+    }
+    if (r.requests.length < 100) break;
+  }
+  return [...forms.values()].sort((a, b) => b.count - a.count);
+}

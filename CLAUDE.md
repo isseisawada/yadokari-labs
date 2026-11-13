@@ -463,3 +463,11 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 - メール: 予約時「ご予約ありがとうございます」（料金入り）、利用後「ご利用完了と領収書発行方法について」（no-reply@telecube.jp）。どちらも領収書ではないので取り込まない
 - 科目: 会議費（オフィスブース）。`submit_expenses.py` がベンダー名「テレキューブ / telecube」で自動判定
 - 2026-11-06 時点、クラウドからは Mac に接続できず発行ボタンは未実行（初回の発行は Mac の Claude か澤田さんがスマホで）
+
+## 月初の自動取り込み（2026年12月〜）
+
+- 定期タスク「経費精算 月初の領収書自動取り込み」（trig_01F8ydcouKNh7uL2sn8KyGBX）が **毎月1日 6:17（日本時間）** にこのセッション（session_01NSeWqGWMGw6XoxL9Zug1AN）で動く
+  - Gmail の領収書メールの添付 → **リポジトリの `inputs_YYYYMM/web_receipts/`**（GitHub に push。クラウドから Dropbox には PDF を書けないため）
+  - GO の一括PDFは分割。会社カード払いの8サービスは取り込まない
+  - 取り込んだもの・足りないものを Slack セルフDM に投稿。freee 登録はしない
+- ログインが要るもの（Suica・Apple・テレキューブ/STATION WORK の発行・Amazon）と紙の写真は、これまでどおり Mac の依頼文 A

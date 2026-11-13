@@ -511,6 +511,14 @@ def main():
                      f"{args.year}年{args.month}月分 経費精算 {len(b)}件 合計¥{sum(int(e['amount']) for e in b):,}。{note}",
                      b, False))
 
+    # 25日に作った下書きベース（inputs_YYYYMM/freee_apps.json の base_ids）があれば、新規作成せずにそこへ入れる
+    base_path = os.path.join(HERE, f"inputs_{args.year}{args.month:02d}", "freee_apps.json")
+    base_ids: list[int] = []
+    if os.path.exists(base_path):
+        with open(base_path, encoding="utf-8") as f:
+            base_ids = [int(x) for x in json.load(f).get("base_ids", [])]
+        print(f"下書きベース: {base_ids}（申請の順に中身を入れる。足りなければ新規作成）\n")
+
     created: list[tuple[str, int]] = []
     for idx, (title, app_desc, batch, is_suica) in enumerate(plan):
         batch_total = sum(int(e["amount"]) for e in batch)
@@ -549,7 +557,7 @@ def main():
             continue
         app = ExpenseApplication(title=title, lines=lines, description=app_desc,
                                  approval_flow_route_id=APPROVAL_FLOW_ROUTE_ID)
-        result = client.create_expense_application(app)
+        result = client.create_expense_application(app, update_id=base_ids[idx] if idx < len(base_ids) else None)
         created.append((title, result["id"]))
         print(f"  → 申請ID: {result['id']}\n")
 
@@ -572,6 +580,9 @@ def main():
         for title, app_id in created:
             print(f"  {title}: https://secure.freee.co.jp/expense_applications_v2/{app_id}")
         print("\nfreee UI で内容を確認し、問題なければ各申請の「申請」ボタンを押してください。")
+    unused = base_ids[len(plan):]
+    if unused and not args.dry_run:
+        print(f"\n⚠ 使わなかった下書きベース（¥0 の仮行だけ）: {unused} → freee で削除してください")
 
 
 if __name__ == "__main__":

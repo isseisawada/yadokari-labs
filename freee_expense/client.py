@@ -84,6 +84,19 @@ class FreeeClient:
         resp.raise_for_status()
         return resp.json()
 
+    def _put(self, path: str, body: dict) -> Any:
+        resp = requests.put(
+            BASE_URL + path,
+            headers=self._headers(),
+            json=body,
+            timeout=30,
+        )
+        if not resp.ok:
+            print(f"[API エラー] {resp.status_code} {path}")
+            print(resp.text[:600])
+        resp.raise_for_status()
+        return resp.json()
+
     def _post_multipart(self, path: str, files: dict, data: dict | None = None) -> Any:
         headers = {"Authorization": f"Bearer {self._access_token}"}
         resp = requests.post(
@@ -171,8 +184,8 @@ class FreeeClient:
     # 経費申請
     # ------------------------------------------------------------------ #
 
-    def create_expense_application(self, application: ExpenseApplication) -> dict:
-        """経費申請を作成して申請データを返す"""
+    def create_expense_application(self, application: ExpenseApplication, update_id: int | None = None) -> dict:
+        """経費申請を作成して申請データを返す。update_id があれば、その下書き（25日に作るベース）を中身ごと置き換える"""
         company_id = self.get_company_id()
 
         lines = []
@@ -226,6 +239,12 @@ class FreeeClient:
 
         # 部門(section) は付けない（承認経路 1469199 で決まる。以前は sections[0]=「BETTARA（使わない）」を付けていた）
 
+        if update_id:
+            body["issue_date"] = date.today().isoformat()
+            result = self._put(f"/api/1/expense_applications/{update_id}", body)
+            app = result["expense_application"]
+            print(f"下書きベースに登録しました: ID={app['id']}  タイトル={app['title']}")
+            return app
         result = self._post("/api/1/expense_applications", body)
         app = result["expense_application"]
         print(f"経費申請を作成しました: ID={app['id']}  タイトル={app['title']}")

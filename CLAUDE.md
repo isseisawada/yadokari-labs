@@ -467,10 +467,23 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 - 科目: 会議費（オフィスブース）。`submit_expenses.py` がベンダー名「テレキューブ / telecube」で自動判定
 - 2026-11-06 時点、クラウドからは Mac に接続できず発行ボタンは未実行（初回の発行は Mac の Claude か澤田さんがスマホで）
 
-## 月初の自動取り込み（2026年12月〜）
+## 自動実行のスケジュール（2026年11月〜。期限は翌月3日）
 
-- 定期タスク「経費精算 月初の領収書自動取り込み」（trig_01F8ydcouKNh7uL2sn8KyGBX）が **毎月1日 6:17（日本時間）** にこのセッション（session_01NSeWqGWMGw6XoxL9Zug1AN）で動く
-  - Gmail の領収書メールの添付 → **リポジトリの `inputs_YYYYMM/web_receipts/`**（GitHub に push。クラウドから Dropbox には PDF を書けないため）
-  - GO の一括PDFは分割。会社カード払いの8サービスは取り込まない
-  - 取り込んだもの・足りないものを Slack セルフDM に投稿。freee 登録はしない
-- ログインが要るもの（Suica・Apple・テレキューブ/STATION WORK の発行・Amazon）と紙の写真は、これまでどおり Mac の依頼文 A
+すべて このセッション（session_01NSeWqGWMGw6XoxL9Zug1AN）で動く定期タスク（Gmail・Slack・カレンダー・freee の接続を使うため）。freee の「申請」は押さない。
+
+| いつ（JST） | 定期タスク | やること |
+|---|---|---|
+| 25日 6:23 | trig_0176aYqYAPrHWkmfH731DVA5 | 今月分を途中取り込み。**freee に下書きベースを3つ作る**（下記）。月末までにやることを Slack へ |
+| 28日 6:23 | trig_01DZWNMLBdBYBVr4GBsxZrXj | 追加取り込み、Dropbox photo/ の枚数確認、月末リマインド |
+| 1日 6:17 | trig_01F8ydcouKNh7uL2sn8KyGBX | 前月分を取り込み → 読み取り → カレンダーで参加者 → ドライラン。足りないもの・確認事項を Slack へ |
+| 2日 6:23 | trig_01WM8pzChMkD47o9ZJL9f55z | Mac で取った分・遅れたメールを足してドライランやり直し。「今日中に依頼文C → 申請」を Slack へ |
+| 3日 6:23 | trig_019e2JHXMMFHs8R2Bhx1YEC9 | 期限日。freee で申請済みか確認し、未申請なら強めに Slack へ |
+
+- 取り込み先はリポジトリの `inputs_YYYYMM/web_receipts/`（クラウドから Dropbox には PDF を書けない）
+- ログインが要るもの（Suica・Apple・テレキューブ/STATION WORK の発行・Amazon）と紙の写真は Mac の依頼文 A
+
+### freee の下書きベース（25日に作る）
+
+- freee は明細ゼロの申請を作れない（400「Purchase linesを入力してください」）ので、**¥0 の仮行1つ**（説明「下書きベース（この行は登録時に置き換わる）」、テンプレート 289807）で3つ作る。タイトル「経費精算申請1/3」「2/3」「3/3」、draft
+- IDは `inputs_YYYYMM/freee_apps.json` に `{"base_ids":[…]}`
+- `submit_expenses.py` は freee_apps.json があれば、新規作成せず **PUT で順に中身を置き換える**（2026-11-13 に作成→PUT→削除で動作確認済み）。申請が4つ以上なら残りは新規作成、2つで済めば余ったベースを「削除してください」と表示

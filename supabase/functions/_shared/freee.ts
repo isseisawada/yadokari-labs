@@ -105,7 +105,9 @@ export async function createProjectTag(projectNo: string, dealName: string): Pro
 export async function createInvoice(o: { partnerId: number; subject: string; lines: InvoiceLine[]; segmentTagId: number; memo: string }) {
   const today = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
   const body = {
-    company_id: COMPANY_ID, billing_date: today, subject: o.subject, partner_id: o.partnerId, partner_title: "御中",
+    // 書式は今使っている「【2024年4月発行から】請求書フォーマット」（登録番号・振込先入り）
+    company_id: COMPANY_ID, template_id: Number(Deno.env.get("FREEE_INVOICE_TEMPLATE_ID") ?? "1380024"), payment_type: "transfer",
+    billing_date: today, subject: o.subject, partner_id: o.partnerId, partner_title: "御中", line_amount_fraction: "omit",
     tax_entry_method: "out", tax_fraction: "omit", withholding_tax_entry_method: "out", memo: o.memo,
     lines: o.lines.map((l) => ({ type: "item", ...l, segment_1_tag_id: o.segmentTagId })),
   };

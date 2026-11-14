@@ -5,19 +5,20 @@
 (function () {
   if (typeof IS_TEST === 'undefined' || !IS_TEST) return;   // 本番ページでは何もしない
 
-  // ── 発行元と定型文（あとで差し替える。値が無いものは「（要確認）」のまま） ──
+  // ── 発行元と定型文（freee の「【2024年4月発行から】見積書・請求書フォーマット」と同じ内容。2026-11-14） ──
   var ISSUER = {
     name: 'YADOKARI株式会社',
-    zip: '（要確認）',
-    address: '住所（要確認）',
-    tel: '（要確認）',
-    seal: '',                       // 角印の画像のパス。空なら「角印（要確認）」の枠を出す
+    zip: '240-0006',
+    address: '神奈川県横浜市保土ケ谷区星川1-1-1 星天qlay',
+    regNo: 'T3020003008399',        // 適格請求書発行事業者の登録番号
+    seal: '',                       // 角印の画像のパス。空なら角印は出さない（freee の書式にも無い）
     logo: 'samples/logo.svg',
   };
   var VALID_DAYS = 30;
   var NOTES = [
     '【見積り有効期限】' + VALID_DAYS + '日間',
     '【支払いサイト】（要確認）',
+    '※恐れ入りますが、振込手数料は御社負担にてお願い申し上げます。',
     '【納期】（要確認）※納期に関しましては、前後する可能性がございます。',
     '・車庫証明、印鑑証明等車検取得に関わる書類の取得はお客様にご準備をいただきます。',
     '・敷地に障害物がある・進入路や敷地形状が事前確認のものと異なるなどの場合、搬入ができないことや、本見積もり外に別途費用がかかる可能性があります。',
@@ -68,7 +69,7 @@
     console.assert(sum === q.totalPre, '見積書：明細の合計と税抜合計が合いません', sum, q.totalPre);
 
     var notes = NOTES.concat((st.note || '').split('\n').filter(function (s) { return s.trim(); }));
-    var seal = ISSUER.seal ? '<img class="seal" src="' + esc(ISSUER.seal) + '" alt="角印">' : '<div class="seal">角印<br>（要確認）</div>';
+    var seal = ISSUER.seal ? '<img class="seal" src="' + esc(ISSUER.seal) + '" alt="角印">' : '';
 
     return '<!doctype html><html lang="ja"><head><meta charset="utf-8"><base href="' + esc(location.href) + '">' +
       '<title>見積書_' + esc(no) + '</title>' +
@@ -84,7 +85,7 @@
           '<tr><th>見積書番号</th><td class="num">' + esc(no) + '</td></tr>' +
           '<tr><th>有効期限</th><td class="num">' + ymd(until, '-') + '</td></tr>' +
         '</table>' +
-        '<div class="from">' + seal + '<b>' + esc(ISSUER.name) + '</b><br>担当：' + esc(q.staffName || '') + '<br>〒' + esc(ISSUER.zip) + '<br>' + esc(ISSUER.address) + '<br>TEL' + esc(ISSUER.tel) + '</div>' +
+        '<div class="from">' + seal + '<b>' + esc(ISSUER.name) + '</b><br>担当：' + esc(q.staffName || '') + '<br>〒' + esc(ISSUER.zip) + '<br>' + esc(ISSUER.address) + '<br>登録番号：' + esc(ISSUER.regNo) + '</div>' +
       '</div></section>' +
       '<div class="subject"><span>件名</span><span>' + esc(st.subject || defaultSubject(q)) + '</span></div>' +
       '<div class="total">' +

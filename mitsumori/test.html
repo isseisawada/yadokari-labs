@@ -1261,6 +1261,20 @@ function mPrice(m) { return ovr(`model:${m.id}:price`, m.price); }
 function mCost(m)  { return ovr(`model:${m.id}:cost`,  m.cost || 0); }
 function soPrice(opt, size) { return ovr(`sizeOpt:${opt.id}:${size}:price`, opt.prices?.[size] ?? null); }
 function soCost(opt, size)  { return ovr(`sizeOpt:${opt.id}:${size}:cost`,  opt.costs?.[size]  ?? 0); }
+
+// サイズ連動オプションは、選んだ車両のサイズごとに台数を数えて、そのサイズの金額で計上する
+function sizeOptLines(o, s, models, lines, ql) {
+  if (!s.sizeOpts[o.id]) return;
+  const qtyBySize = {};
+  models.forEach(m => { const q = s.modelQtys[m.id]||0; if (q && m.size) qtyBySize[m.size] = (qtyBySize[m.size]||0) + q; });
+  const sizes = Object.keys(qtyBySize);
+  sizes.forEach(sz => {
+    if (!soPrice(o, sz)) return;
+    const q = qtyBySize[sz];
+    lines.push({ name:o.name + (sizes.length > 1 ? `（${sz}）` : '') + ql(q), val:soPrice(o, sz)*q, cost:soCost(o, sz)*q });
+  });
+}
+
 function coPrice(opt) { return ovr(`commonOpt:${opt.id}:price`, opt.price); }
 function coCost(opt)  { return ovr(`commonOpt:${opt.id}:cost`,  opt.cost || 0); }
 function blPrice(b)   { return ovr(`blind:${b.idx}:price`, b.price); }
@@ -2069,7 +2083,7 @@ function collectLines() {
       const qty = s.modelQtys[m.id]||0; if (!qty) return;
       lines.push({ name:`【ベース】${m.label}${ql(qty)}`, val:mPrice(m)*qty, cost:mCost(m)*qty, cls:'base' });
     });
-    TINYS_SIZE_OPTS.forEach(o => { if (s.sizeOpts[o.id] && size && soPrice(o, size)) lines.push({ name:o.name+ql(tq), val:soPrice(o, size)*tq, cost:soCost(o, size)*tq }); });
+    TINYS_SIZE_OPTS.forEach(o => sizeOptLines(o, s, TINYS_MODELS, lines, ql));
     TINYS_COMMON_OPTS.forEach(o => { if (s.commonOpts[o.id]) lines.push({ name:o.name+ql(tq), val:coPrice(o)*tq, cost:coCost(o)*tq }); });
     if (s.blindIdx > 0) { const b = TINYS_BLIND_OPTS.find(x => x.idx === s.blindIdx); if (b) lines.push({ name:`ロールスクリーン ${b.label}×${s.blindCount}枚${ql(tq)}`, val:blPrice(b)*s.blindCount*tq, cost:blCost(b)*s.blindCount*tq }); }
     TINYS_MISC_OPTS.forEach(o => { if (s.miscOpts[o.id]) lines.push({ name:o.name+ql(tq), val:mxPrice(o)*tq, cost:mxCost(o)*tq }); });
@@ -2096,7 +2110,7 @@ function collectLines() {
       const qty = s.modelQtys[m.id]||0; if (!qty) return;
       lines.push({ name:`【ベース】ROADIE ${m.label}${ql(qty)}`, val:mPrice(m)*qty, cost:mCost(m)*qty, cls:'base' });
     });
-    ROADIE_SIZE_OPTS.forEach(o => { if (s.sizeOpts[o.id] && size && soPrice(o, size)) lines.push({ name:o.name+ql(tq), val:soPrice(o, size)*tq, cost:soCost(o, size)*tq }); });
+    ROADIE_SIZE_OPTS.forEach(o => sizeOptLines(o, s, ROADIE_MODELS, lines, ql));
     ROADIE_COMMON_OPTS.forEach(o => { if (s.commonOpts[o.id]) lines.push({ name:o.name+ql(tq), val:coPrice(o)*tq, cost:coCost(o)*tq }); });
     ROADIE_MISC_OPTS.forEach(o => { if (s.miscOpts[o.id]) lines.push({ name:o.name+ql(tq), val:mxPrice(o)*tq, cost:mxCost(o)*tq }); });
     if (s.designLv > 0) {

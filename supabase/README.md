@@ -5,8 +5,8 @@
 ## さわださんにお願いする作業（最初の1回だけ）
 
 ### 1. Supabase を Claude から触れるようにする（おすすめ）
-見積もりシミュレーターの Supabase プロジェクト（`bvwyyocqynbftjnkzsvw`）は、今つないでいる Supabase のコネクタからは見えません（見えるのは別の組織の yadokari-valuecard だけ）。
-claude.ai の設定 → コネクタ → Supabase で、このプロジェクトがある組織へのアクセスも許可してください。これができれば、2 以降の「表を作る・処理を載せる・秘密情報を入れる」は Claude が行います。
+見積もりシミュレーターの Supabase プロジェクトは **YADOKARI_works**（`bvwyyocqynbftjnkzsvw`）です。2026-11-13 に YADOKARI_lab（`iredvrxhkilbbfrdnmdm`、バリューカード・AI工場・ゾーニングシミュレーター）と同じ組織に移し、名前を変えました。ID・URL・鍵は変わっていません。
+Supabase のコネクタから両方のプロジェクトが見えるようになりました。表を作る・処理を載せるなどの書き込みには、claude.ai の設定 → コネクタ → Supabase で、この組織への書き込みを許可してください。これができれば、2 以降の「表を作る・処理を載せる・秘密情報を入れる」は Claude が行います。
 
 自分で載せる場合は、Supabase CLI で次を実行します。
 ```

@@ -9,5 +9,17 @@
     "participants": [],
     "invoice_number": "T4010001137274",
     "receipt_path": "inputs_202611/receipts/mail_1a1d7fba6e10dd43_1.jpg"
+  },
+  {
+    "date": "2026-11-14",
+    "vendor": "ローソン逗子七丁目店",
+    "amount": 3828,
+    "kind": "receipt",
+    "account": "備品消耗品",
+    "description": "",
+    "ocr_description": "USBメモリ（メール本文）",
+    "participants": [],
+    "invoice_number": "T9810508010871",
+    "receipt_path": "inputs_202611/receipts/mail_1a1d964650528a69_1.jpg"
   }
 ]

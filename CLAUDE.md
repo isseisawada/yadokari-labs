@@ -436,6 +436,7 @@ python3 submit_expenses.py --month 8
 1. **紙の領収書**: `from:sawada@yadokari.net subject:経費 has:attachment` のメールの添付を `download_gmail_attachment` で
    `inputs_YYYYMM/receipts/` に保存（ファイル名 `mail_<messageId>_<n>.<拡張子>`）。本文に名前があれば参加者として overrides.json に（`_source: メール本文`）。
    同じ写真が2通に入っていたら1つだけ使う（sha256 で判定）
+   - 本文が品目のメモのこともある（11/14「USBメモリ」→ 備品消耗品・内容欄「消耗品」）。人の名前なら参加者、品目なら科目を決める手がかりにする（`ocr_description` に残す）
 2. 読み取り → entries → カレンダーで参加者 → `merge_entries.py` → `submit_expenses.py --month M --dry-run`
 3. `python3 submit_expenses.py --month M --emit-json`
    → `inputs_YYYYMM/freee_upload_todo.json`（まだ freee に無い証憑の一覧）と `freee_payloads.json`（申請の JSON）を書く
@@ -446,6 +447,8 @@ python3 submit_expenses.py --month 8
    `inputs_YYYYMM/upload_cache.json`（キー → receipt_id）に書く。1通に複数ファイルを付けた場合も添付順に ID が振られる（11/14 確認）が、確実さのため1通1ファイル
 6. もう一度 `--emit-json` → todo が 0 件になったら、`freee_payloads.json` の各申請を freee MCP で
    `update_id` があれば `PUT /api/1/expense_applications/{update_id}`、無ければ `POST`（body はそのまま）
+   - **注意（11/14 確認）**: freee は「その申請にもう付いている領収書」を新しい行として送ると 400（「既に経費申請で使用されています」）。別の申請に付いている領収書も同じ。
+     → **PUT の前に、対象の下書きを全部いったん ¥0 の仮行だけに PUT して領収書を外す**（全ベースを先に空にしてから、中身を順に PUT）。これで確実に通る
 7. 余った下書きベースは DELETE。commit & push → Slack に freee の URL（`https://secure.freee.co.jp/expense_applications_v2/{ID}`）
 - 澤田さんの作業は freee で内容を見て「申請」を押すだけ
 

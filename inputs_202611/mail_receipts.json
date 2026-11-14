@@ -4,5 +4,12 @@
     "files": [
       "inputs_202611/receipts/mail_1a1d7fba6e10dd43_1.jpg"
     ]
+  },
+  "1a1d964650528a69": {
+    "subject": "経費",
+    "body": "USBメモリ",
+    "files": [
+      "inputs_202611/receipts/mail_1a1d964650528a69_1.jpg"
+    ]
   }
 }

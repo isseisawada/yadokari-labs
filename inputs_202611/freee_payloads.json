@@ -5,7 +5,7 @@
   "body": {
    "company_id": 845775,
    "title": "経費精算申請1/1",
-   "description": "2026年11月分 経費精算 1件 合計¥330。",
+   "description": "2026年11月分 経費精算 2件 合計¥4,158。",
    "purchase_lines": [
     {
      "transaction_date": "2026-11-14",
@@ -17,6 +17,17 @@
       }
      ],
      "receipt_id": 526235811
+    },
+    {
+     "transaction_date": "2026-11-14",
+     "expense_application_lines": [
+      {
+       "description": "消耗品",
+       "amount": 3828,
+       "expense_application_line_template_id": 300535
+      }
+     ],
+     "receipt_id": 526324308
     }
    ],
    "approval_flow_route_id": 1469199,

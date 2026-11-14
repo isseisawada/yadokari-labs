@@ -1,0 +1,20 @@
+/* 見積もりの Yツール版テスト（test-ytool.html）だけで使う小さな部品。
+   画面本体の色・角丸・文字・影は test-ytool.html の中で Yツールの変数にしてある。
+   ここは ytool/formal-quote.js・ytool/hubspot-link.js の写しが使う部品と、入力欄の大きさの決まりだけ。 */
+input, select, textarea { font-size: var(--fs-l); }
+.price-table input, .int-cost-input { font-size: var(--fs-m) !important; } /* 表の中の入力は表と同じ 14px */
+.admin-hdr .btn, .admin-actions .btn { white-space: nowrap; }
+.q-int { display: inline-block; margin-right: var(--s2); font-size: var(--fs-xs); font-weight: 700; color: var(--sub); }
+.yt-sub-card { margin-top: var(--s3); font-size: var(--fs-m); color: var(--text); }
+.yt-sub-card__ttl { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-l); font-weight: 700; color: var(--ink); margin-bottom: var(--s2); }
+.fq-field { display: flex; flex-direction: column; gap: var(--s1); margin-top: var(--s3); }
+.fq-field .yt-textarea { height: auto; min-height: 96px; padding: var(--s2) var(--s3); }
+.yt-msg { min-height: 1.5em; margin-top: var(--s2); font-size: var(--fs-m); color: var(--sub); }
+.yt-note { font-size: var(--fs-s); color: var(--sub); }
+.yt-link { margin-left: var(--s2); font-size: var(--fs-m); color: var(--info); }
+.yt-flow { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px dashed var(--line-strong); }
+.yt-inline { display: inline-flex; align-items: center; gap: var(--s2); margin-top: var(--s2); }
+.cust-field .yt-check, .yt-check { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s3); font-size: var(--fs-l); font-weight: 400; color: var(--ink); cursor: pointer; }
+.yt-check input { width: 18px !important; height: 18px; margin: 0; accent-color: var(--ink); flex: none; }
+/* 状態を出すボタンは文字が長くなるので折り返す（はみ出し防止） */
+.yt-sub-card .yt-btn { max-width: 100%; height: auto; min-height: var(--h-s); padding-block: var(--s1); white-space: normal; text-align: left; }

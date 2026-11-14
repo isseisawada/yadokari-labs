@@ -11,7 +11,7 @@
     zip: '240-0006',
     address: '神奈川県横浜市保土ケ谷区星川1-1-1 星天qlay',
     regNo: 'T3020003008399',        // 適格請求書発行事業者の登録番号
-    seal: '',                       // 角印の画像のパス。空なら角印は出さない（freee の書式にも無い）
+    seal: 'samples/seal.png',       // 社印。freee の請求書（2024年4月発行からの書式）に押されているものを写した
     logo: 'samples/logo.svg',
   };
   var VALID_DAYS = 30;
@@ -69,7 +69,7 @@
     console.assert(sum === q.totalPre, '見積書：明細の合計と税抜合計が合いません', sum, q.totalPre);
 
     var notes = NOTES.concat((st.note || '').split('\n').filter(function (s) { return s.trim(); }));
-    var seal = ISSUER.seal ? '<img class="seal" src="' + esc(ISSUER.seal) + '" alt="角印">' : '';
+    var seal = ISSUER.seal ? '<img class="seal" src="' + esc(ISSUER.seal) + '" alt="社印">' : '';
 
     return '<!doctype html><html lang="ja"><head><meta charset="utf-8"><base href="' + esc(location.href) + '">' +
       '<title>見積書_' + esc(no) + '</title>' +
@@ -118,7 +118,7 @@
     '.to-addr{margin-top:2mm;font-size:8.5pt;color:var(--g)}.meta{width:100%;border-collapse:collapse}' +
     '.meta th,.meta td{border-bottom:1px solid var(--lg);padding:1mm 0;font-size:8.5pt}.meta th{text-align:left;font-weight:500;color:var(--g);width:22mm}.meta td{text-align:right}' +
     '.from{position:relative;margin-top:3mm;font-size:8.5pt;line-height:1.55}.from b{font-size:10.5pt}' +
-    '.seal{position:absolute;right:0;top:0;width:17mm;height:17mm;border:1px dashed var(--lg);color:var(--g);font-size:7pt;display:grid;place-items:center;text-align:center;line-height:1.3}img.seal{border:0;object-fit:contain}' +
+    '.seal{position:absolute;right:0;top:0;width:17mm;height:17mm;border:1px dashed var(--lg);color:var(--g);font-size:7pt;display:grid;place-items:center;text-align:center;line-height:1.3}img.seal{border:0;object-fit:contain;mix-blend-mode:multiply}' +
     '.subject{display:grid;grid-template-columns:14mm 1fr;margin-top:4mm;font-size:10pt}.subject span:first-child{color:var(--g)}' +
     '.total{display:grid;grid-template-columns:1fr 1fr 1.6fr;margin-top:3mm;border:1px solid var(--k)}.total div{padding:2mm 3mm}.total div+div{border-left:1px solid var(--lg)}' +
     '.total .lbl{display:block;font-size:7.5pt;color:var(--g)}.total .v{font-size:11pt}.total .grand{background:var(--k);color:#fff}.total .grand .lbl{color:var(--lg)}.total .grand .v{font-size:17pt;font-weight:600}' +

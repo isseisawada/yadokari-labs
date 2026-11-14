@@ -1,0 +1,43 @@
+@charset "UTF-8";
+/* 見積もりシミュレーター × Yツール：見比べ用のテストページ（test-ytool.html）だけで読む上書き。本番の quote_app.html は読まない
+   読み込み順：ytool-tokens.css → ytool.css → この quote-skin.css（最後）
+   shortcut: 既存のクラスに値を上書きしているだけ。本番に当てるときは、部品ごとに Yツールのクラスへ置き換える */
+
+/* ---- 色：見積もりの変数を Yツールの値に。紫を残さない ---- */
+:root {
+  --p: var(--ink); --p-hover: var(--text); --p-light: var(--q-gray); --p-mid: var(--line-strong);
+  --bg: var(--paper); --border: var(--line); --t1: var(--ink); --t2: var(--text); --t3: var(--sub); --red: var(--danger);
+  /* 見積もりの --surface は「カードの白」。Yツールの --surface（グレー面）と名前がぶつかるので、この画面では白に戻す */
+  --surface: #FFFFFF;
+  --q-gray: #E8E8E8; /* Yツールの --surface（グレー面）と同じ値。名前がぶつかるため、この画面だけ別名で持つ */
+}
+#gate { background: var(--ink); }
+#gateInput:focus { border-color: var(--ink); }
+#gateBtn { background: var(--ink); border-radius: var(--r-pill); }
+#gateBtn:hover { background: var(--text); }
+.m-card.sel .m-ico { background: var(--q-gray); }
+
+/* ---- 文字：書体・自動カーニング・標準 16px ---- */
+body { font-family: var(--font); font-kerning: normal; font-feature-settings: "palt" 1, "kern" 1; font-size: var(--fs-l); }
+input, select, textarea, button { font-family: inherit; }
+input, select, textarea { font-size: var(--fs-l) !important; } /* 入力した値は 16px（iPhone の自動拡大も防ぐ） */
+.price-table, .hist-card, .int-summary { font-size: var(--fs-m); }
+
+/* ---- 角丸：押せる＝丸 ---- */
+.s-btn, .btn-pdf, .btn-a, .btn-b, .btn-c, .btn-internal, .qty-btn, .mg-row .qty-btn, .comp-btn-back, .comp-btn-print, .comp-btn-excel, .comp-btn-new,
+.admin-actions .btn, .bottom-nav-bar .btn-save, .admin-tab, .cst-del-btn, .hidden-restore, .admin-add-btn, .dlv-btn, .custom-opt-del, .custom-opt-add,
+.staff-add-btn, .hist-btn, .hist-export, .hist-filter, .sb-item, .mode-nb, #gateBtn { border-radius: var(--r-pill); }
+.sb-nav, .admin-tab-nav { border-radius: var(--r); } /* 入れ物は押せない面なので 4px（中の項目だけ丸） */
+
+/* ---- 角丸：押せない面・入力欄・タグ＝4px ---- */
+.card, .m-card, .sum-card, .custom-p, .custom-p input, .size-note, .mg-row, .blind-selects select, .sel-group select,
+.trans-custom-label, .trans-custom-input, .disc-row input, .sum-disc-field input, .int-summary, .int-cost-input, .int-pass-tag,
+.cust-field input, .cust-field select, .req-by-sel, .pc-card, .admin-section, .price-table input[type="number"], .price-table input[type="text"].memo-inp,
+.price-table input.cst-name-inp, .rate-field input, .hidden-item, .broker-empty, .design-lv-info, .custom-opt-row input[type="text"], .custom-opt-row input[type="number"],
+.staff-name-input, .staff-add-row input, .hist-search, .hist-card, .hist-tag, .hist-empty, .sb-badge, .admin-tab-badge, .pc-badge, .m-ico, .opt-ico, #gateInput { border-radius: var(--r); }
+
+/* ---- 角丸：浮いた面＝8px（確定画面の書類・入口の小窓） ---- */
+.comp-sheet, .gate-box { border-radius: var(--r-float); }
+
+/* ---- 影：カードには付けない（浮いた面だけ） ---- */
+.card, .m-card, .sum-card, .hist-card, .pc-card, .admin-section { box-shadow: none; }

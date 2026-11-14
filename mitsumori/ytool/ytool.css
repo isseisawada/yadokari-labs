@@ -1,0 +1,156 @@
+@charset "UTF-8";
+/* ==========================================================
+   Yツール 共通の部品（ytool.css）v0.1 案
+   読み込み順：ytool-tokens.css → ytool.css → 各ツールの CSS（配置だけを書く）
+   クラス名は .yt- で始める（各ツールの既存のクラスとぶつけないため）
+========================================================== */
+
+/* ---------- 地・文字 ---------- */
+.yt { font-family: var(--font); font-size: var(--fs-l); line-height: 1.6; color: var(--text); background: var(--paper);
+  letter-spacing: var(--ls-body); -webkit-font-smoothing: antialiased;
+  /* 自動カーニング（2026-11-14 澤田さん指示）：英数字は字形どうしの詰め（kern）、日本語はかなの詰め（palt）を全体にかける */
+  font-kerning: normal; font-feature-settings: "palt" 1, "kern" 1; }
+.yt *, .yt *::before, .yt *::after { box-sizing: border-box; }
+.yt-num, .yt table td.n, .yt-total__v { font-family: var(--en); font-variant-numeric: tabular-nums; }
+.yt-h1 { font-size: var(--fs-xl); font-weight: 700; letter-spacing: var(--ls-head); line-height: 1.4; color: var(--ink); margin: 0; }
+.yt-h2 { font-size: var(--fs-l); font-weight: 700; letter-spacing: var(--ls-head); line-height: 1.5; color: var(--ink); margin: 0; }
+.yt-sub { font-size: var(--fs-m); color: var(--sub); letter-spacing: var(--ls-small); }
+.yt-note { font-size: var(--fs-xs); color: var(--sub); letter-spacing: var(--ls-small); }
+/* 英字の飾りラベル＋番号（YLP の .cap と同じ考え方：「01 / HEARING」） */
+.yt-cap { font-family: var(--en); font-size: var(--fs-xs); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin: 0 0 var(--s1); }
+.yt-cap b { color: var(--ink); font-weight: 700; margin-right: .4em; }
+.yt-cap b::after { content: "/"; color: var(--mute); font-weight: 400; margin-left: .4em; }
+
+/* ---------- 上の帯（ツール共通のヘッダー） ---------- */
+.yt-head { display: flex; align-items: center; gap: var(--s4); height: 56px; padding: 0 var(--s4); background: var(--white); border-bottom: 1px solid var(--line); }
+.yt-head__logo { height: 20px; }
+:root[data-theme="dark"] .yt-head__logo, :root[data-theme="dark"] .yt-logo { filter: brightness(0) invert(1); } /* 黒いロゴは暗い表示で白に（LP の .inv と同じ考え方） */
+.yt-head__name { font-size: var(--fs-m); font-weight: 700; color: var(--ink); }
+.yt-head__name small { display: block; font-family: var(--en); font-size: 10px; font-weight: 500; letter-spacing: .08em; color: var(--sub); text-transform: uppercase; line-height: 1; }
+.yt-head__end { margin-left: auto; display: flex; gap: var(--s2); align-items: center; }
+/* テスト環境の帯：画面の一番上に必ず出す（本番では出さない） */
+.yt-testband { background: var(--warn-bg); color: var(--warn); font-size: var(--fs-s); font-weight: 700; text-align: center; padding: var(--s1) var(--s4); border-bottom: 1px solid var(--warn); }
+
+/* ---------- ボタン：3つの高さ × 4つの種類 ---------- */
+.yt-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: var(--h-m); padding: 0 var(--s5);
+  border-radius: var(--r-pill); border: 1px solid transparent; font: inherit; font-size: var(--fs-l); font-weight: 700; white-space: nowrap;
+  cursor: pointer; text-decoration: none; transition: background var(--t) var(--ease), color var(--t) var(--ease), border-color var(--t) var(--ease); }
+.yt-btn--s { height: var(--h-s); padding: 0 var(--s4); font-size: var(--fs-m); }
+.yt-btn--l { height: var(--h-l); padding: 0 var(--s6); font-size: var(--fs-l); }
+.yt-btn--block { display: flex; width: 100%; }
+.yt-btn--primary { background: var(--ink); color: var(--white); }          /* 主役：1つの画面・パネルに1つ */
+.yt-btn--primary:hover { background: var(--text); }
+.yt-btn--secondary { background: var(--white); color: var(--ink); border-color: var(--line-strong); } /* 2番目 */
+.yt-btn--secondary:hover { border-color: var(--ink); }
+.yt-btn--ghost { background: transparent; color: var(--ink); padding: 0 var(--s3); } /* 取り消し・補助 */
+.yt-btn--ghost:hover { background: var(--surface); }
+.yt-btn--danger { background: var(--white); color: var(--danger); border-color: var(--danger); } /* 削除・差し戻し */
+.yt-btn--danger:hover { background: var(--danger-bg); }
+.yt-btn:disabled, .yt-btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+.yt-btn svg { width: 16px; height: 16px; flex: none; }
+.yt-btn--icon { width: var(--h-m); padding: 0; }   /* アイコンだけのボタン。aria-label を必ず付ける */
+.yt-btn--icon svg { width: 18px; height: 18px; }
+.yt-btns { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; }
+
+/* ---------- 入力欄 ---------- */
+.yt-field { display: grid; gap: var(--s1); margin-bottom: var(--s4); }
+.yt-label { font-size: var(--fs-m); font-weight: 700; color: var(--text); }
+.yt-label .req { color: var(--danger); font-weight: 700; font-size: var(--fs-xs); margin-left: var(--s1); }
+.yt-label .opt { color: var(--sub); font-weight: 400; font-size: var(--fs-xs); margin-left: var(--s1); }
+.yt-hint { font-size: var(--fs-xs); color: var(--sub); }
+.yt-input, .yt-select, .yt-textarea { width: 100%; height: var(--h-m); padding: 0 var(--s3); font: inherit; font-size: var(--fs-l); color: var(--ink);
+  background: var(--white); border: 1px solid var(--line-strong); border-radius: var(--r); transition: border-color var(--t) var(--ease); }
+.yt-textarea { height: auto; min-height: 88px; padding: var(--s2) var(--s3); line-height: 1.6; resize: vertical; }
+.yt-select { appearance: none; padding-right: 36px;
+  background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23707070' stroke-width='1.6'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center; }
+.yt-input::placeholder, .yt-textarea::placeholder { color: var(--mute); }
+.yt-input:hover, .yt-select:hover, .yt-textarea:hover { border-color: var(--sub); }
+.yt-input[aria-invalid="true"] { border-color: var(--danger); }
+.yt-err { font-size: var(--fs-xs); color: var(--danger); font-weight: 700; }
+/* 入力欄は常に 16px（入力した値は標準の大きさ。iPhone の自動拡大も防ぐ） */
+
+/* ---------- 切り替え（2〜5択）・チップ ---------- */
+.yt-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface); border-radius: var(--r-pill); }
+.yt-seg button { height: calc(var(--h-m) - 6px); padding: 0 var(--s4); border: 0; background: transparent; border-radius: var(--r-pill);
+  font: inherit; font-size: var(--fs-m); font-weight: 700; color: var(--text); cursor: pointer; }
+.yt-seg button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+.yt-chip { display: inline-flex; align-items: center; height: var(--h-s); padding: 0 var(--s3); border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+  font-size: var(--fs-m); color: var(--text); background: var(--white); cursor: pointer; }
+.yt-chip[aria-pressed="true"] { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+/* ---------- 状態のタグ ---------- */
+.yt-tag { display: inline-flex; align-items: center; gap: var(--s1); height: 22px; padding: 0 var(--s2); border-radius: var(--r);
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: var(--ls-small); background: var(--surface); color: var(--text); white-space: nowrap; }
+.yt-tag--ok { background: var(--ok-bg); color: var(--ok); }
+.yt-tag--warn { background: var(--warn-bg); color: var(--warn); }
+.yt-tag--danger { background: var(--danger-bg); color: var(--danger); }
+.yt-tag--info { background: var(--info-bg); color: var(--info); }
+.yt-tag--ink { background: var(--ink); color: var(--white); }
+/* 社内だけの値（原価・粗利など）：お客様に見せる画面と区別する印 */
+.yt-internal { border: 1px dashed var(--line-strong); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--paper); }
+.yt-internal::before { content: "社内のみ"; display: inline-block; font-size: var(--fs-xs); font-weight: 700; color: var(--sub); margin-right: var(--s2); }
+
+/* ---------- カード・パネル ---------- */
+.yt-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s5); }
+.yt-card--tight { padding: var(--s4); }
+.yt-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s4); }
+/* 浮いた面（地図の上・小窓・お知らせ）だけ角丸 8px と影 */
+.yt-float { background: var(--white); border-radius: var(--r-float); box-shadow: var(--shadow-float); padding: var(--s4); }
+
+/* ---------- 大きな数字（合計など） ---------- */
+.yt-total { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--white); }
+.yt-total > div { padding: var(--s3) var(--s4); border-right: 1px solid var(--line); }
+.yt-total > div:last-child { border-right: 0; }
+.yt-total__k { font-size: var(--fs-xs); color: var(--sub); }
+.yt-total__v { font-size: var(--fs-xl); font-weight: 700; color: var(--ink); }
+.yt-total > .is-main { background: var(--ink); }
+.yt-total > .is-main .yt-total__k { color: var(--on-ink-sub); }
+.yt-total > .is-main .yt-total__v { color: var(--white); font-size: var(--fs-num); }
+
+/* ---------- 表 ---------- */
+.yt-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--white); }
+.yt-table { width: 100%; border-collapse: collapse; font-size: var(--fs-m); }
+.yt-table th { text-align: left; font-weight: 700; color: var(--sub); background: var(--paper); padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.yt-table td { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); height: 40px; color: var(--text); }
+.yt-table tr:last-child td { border-bottom: 0; }
+.yt-table td.n, .yt-table th.n { text-align: right; }
+.yt-table tbody tr:hover { background: var(--paper); }
+
+/* ---------- タブ・手順（ステップ） ---------- */
+.yt-tabs { display: flex; gap: var(--s5); border-bottom: 1px solid var(--line); }
+.yt-tabs button { height: var(--h-m); padding: 0; border: 0; background: none; font: inherit; font-size: var(--fs-l); font-weight: 700; color: var(--sub);
+  border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+.yt-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.yt-steps { display: flex; align-items: center; gap: var(--s1); list-style: none; padding: 0; margin: 0; counter-reset: s; overflow-x: auto; }
+.yt-steps li { counter-increment: s; display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); font-size: var(--fs-m); color: var(--sub); white-space: nowrap; border-radius: var(--r-pill); }
+.yt-steps li::before { content: counter(s, decimal-leading-zero); font-family: var(--en); font-weight: 700; color: var(--mute); }
+.yt-steps li[aria-current="step"] { background: var(--ink); color: var(--white); font-weight: 700; }
+.yt-steps li[aria-current="step"]::before { color: var(--white); }
+/* 終わった手順：緑の丸の中にチェックを白く抜く（YLP の .tags のチェックと同じ形）。文字のベースラインにそろえる */
+.yt-steps li { align-items: baseline; }
+.yt-steps li.is-done::before { content: ""; flex: none; position: relative; top: calc(8px - .34em); width: 16px; height: 16px; border-radius: 50%; background: var(--ok);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M7 12.5l3.2 3.2L17 9%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") center / contain no-repeat, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M7 12.5l3.2 3.2L17 9%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") center / contain no-repeat exclude, linear-gradient(#000 0 0); }
+.yt-steps li.is-done { color: var(--text); }
+
+/* ---------- お知らせ・小窓・空の状態 ---------- */
+.yt-alert { display: flex; gap: var(--s2); padding: var(--s3) var(--s4); border-radius: var(--r); font-size: var(--fs-l); background: var(--info-bg); color: var(--info); }
+.yt-alert--ok { background: var(--ok-bg); color: var(--ok); }
+.yt-alert--warn { background: var(--warn-bg); color: var(--warn); }
+.yt-alert--danger { background: var(--danger-bg); color: var(--danger); }
+.yt-alert b { font-weight: 700; }
+.yt-toast { display: inline-flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); background: var(--ink); color: var(--white);
+  border-radius: var(--r-float); box-shadow: var(--shadow-float); font-size: var(--fs-m); }
+.yt-toast__act { padding: var(--s1) 0; border: 0; background: none; font: inherit; font-size: var(--fs-m); font-weight: 700; color: var(--white);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer; } /* 帯の中で押せるのはここだけ：ボタンにせず下線の文字にする */
+.yt-modal { max-width: 440px; background: var(--white); border-radius: var(--r-float); box-shadow: var(--shadow-float); padding: var(--s5); }
+.yt-empty { text-align: center; padding: var(--s7) var(--s4); color: var(--sub); font-size: var(--fs-m); border: 1px dashed var(--line-strong); border-radius: var(--r); background: var(--white); }
+
+/* ---------- アイコン（YLP と同じ一式＋ツールで足したもの。24px の枠に線 1.8px で描く） ---------- */
+.yt-ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+/* 文字の頭に添えるアイコン：ベースライン基準で1行目の文字の中央にそろえる（YLP の .ic-lbl と同じ考え方） */
+.yt-ic--lbl { position: relative; top: calc(9px - .38em); color: var(--sub); }
+
+/* ---------- 押せる所の枠（キーボード操作） ---------- */
+.yt :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .yt * { transition: none !important; } }

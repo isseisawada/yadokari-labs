@@ -15,15 +15,16 @@
     logo: 'samples/logo.svg',
   };
   var VALID_DAYS = 30;
-  var NOTES = [
+  // 支払いの条件と納期は案件ごとに違うので、確定画面の入力欄から入れる（空なら「（要確認）」）
+  function notesFor(st) { return [
     '【見積り有効期限】' + VALID_DAYS + '日間',
-    '【支払いサイト】（要確認）',
+    '【お支払い条件】' + (st.pay || '（要確認）'),
     '※恐れ入りますが、振込手数料は御社負担にてお願い申し上げます。',
-    '【納期】（要確認）※納期に関しましては、前後する可能性がございます。',
+    '【納期】' + (st.lead || '（要確認）') + '　※納期に関しましては、前後する可能性がございます。',
     '・車庫証明、印鑑証明等車検取得に関わる書類の取得はお客様にご準備をいただきます。',
     '・敷地に障害物がある・進入路や敷地形状が事前確認のものと異なるなどの場合、搬入ができないことや、本見積もり外に別途費用がかかる可能性があります。',
     '・現地での給排水費用は含まれておりません。',
-  ];
+  ]; }
 
   var KEY = 'fq_v1';
   var st = {};
@@ -68,7 +69,7 @@
     var sum = q.sections.reduce(function (a, s) { return a + s.lines.reduce(function (b, l) { return b + (l.internalOnly ? 0 : l.val); }, 0); }, 0) - (q.discount || 0);
     console.assert(sum === q.totalPre, '見積書：明細の合計と税抜合計が合いません', sum, q.totalPre);
 
-    var notes = NOTES.concat((st.note || '').split('\n').filter(function (s) { return s.trim(); }));
+    var notes = notesFor(st).concat((st.note || '').split('\n').filter(function (s) { return s.trim(); }));
     var seal = ISSUER.seal ? '<img class="seal" src="' + esc(ISSUER.seal) + '" alt="社印">' : '';
 
     return '<!doctype html><html lang="ja"><head><meta charset="utf-8"><base href="' + esc(location.href) + '">' +
@@ -172,6 +173,8 @@
     box.innerHTML = '<div style="font-weight:700">正式な見積書（テスト中）</div>';
     box.appendChild(field('件名', 'subject', defaultSubject(q)));
     box.appendChild(field('宛先の住所（任意）', 'address', '〒000-0000 …'));
+    box.appendChild(field('お支払い条件', 'pay', '例：ご契約時に着手金50%、納品時に残金50%'));
+    box.appendChild(field('納期', 'lead', '例：ご契約日より4〜5か月後'));
     box.appendChild(field('納品期限（任意）', 'due', '（要確認）'));
     box.appendChild(field('納品場所（任意）', 'place', '（要確認）'));
     box.appendChild(field('備考の追記（任意・1行ずつ）', 'note', '', true));

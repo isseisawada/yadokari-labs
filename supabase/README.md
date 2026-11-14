@@ -95,3 +95,17 @@ deno check supabase/functions/quote-hubspot/index.ts supabase/functions/slack-ap
 | `FREEE_CLIENT_ID` / `FREEE_CLIENT_SECRET` | freee に本物の案件番号・請求書の下書きを作る。入れたあと https://bvwyyocqynbftjnkzsvw.supabase.co/functions/v1/deal-flow?freee=login を開いて許可すると、鍵は `oauth_tokens` 表に控えられ、以後は自動で更新される | freee の書き込み権限と連携用アプリ |
 
 承認の結果を定期的に見に行く仕組み（pg_cron で `deal-flow` の `poll` を10分おき）は、本物のバクラクにつなぐときに入れます。
+
+## 本番に切り替えるとき（2026-11-14 澤田さん決定）
+
+システムが全部つながったら、梶山さん・西浦さんに確認してから切り替える。対象は「トレーラーハウス販売」パイプライン（ID `default`。段階の名前はテスト用と同じなので、そのまま動く）。
+
+| 秘密情報 | 本番の値 |
+| --- | --- |
+| `SLACK_MANAGER_USER_IDS` | U0B3X4XSXGV（梶山さん） |
+| `SLACK_CORPORATE_USER_IDS` | U07RERF6DAT,U06PA4K9N4C（西浦さん・榊原さん。どちらか1人の承認で進む） |
+| `SLACK_APPROVAL_CHANNEL` | 本番用のチャンネルを決めて入れる |
+| `HUBSPOT_PROD_PIPELINE_ID` | default |
+| `QUOTE_HUBSPOT_PROD` | on |
+
+あわせて、見積もりシミュレーターの本番ページ（quote_app.html）に hubspot-link.js・formal-quote.js を読み込ませる。テストデータは 12/1 の確認のあとで消す。移す前のゾーニングのデータベース（YADOKARI_lab）は 11/27 まで様子を見る。

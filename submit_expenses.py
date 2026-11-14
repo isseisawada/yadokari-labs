@@ -37,11 +37,12 @@ sys.path.insert(0, HERE)
 from dotenv import load_dotenv
 load_dotenv(os.path.join(HERE, ".env"), override=True)
 
-from freee_expense.client import FreeeClient, ExpenseLine, ExpenseApplication
+from freee_expense.client import FreeeClient, ExpenseLine, ExpenseApplication, application_body
 
 # ------------------------------------------------------------------------- #
 # 設定
 # ------------------------------------------------------------------------- #
+COMPANY_ID = 845775
 APPROVAL_FLOW_ROUTE_ID = 1469199   # 経費精算_API用（さわだ指定）
 DEFAULT_BATCH_SIZE     = 30
 
@@ -358,6 +359,23 @@ def upload_files(client: FreeeClient, paths: list[str], what: str,
     return out
 
 
+def resolve_from_cache(fname: str, names: set) -> dict:
+    """freee_cache/<fname>（[{id, name}, ...]。クラウドで freee MCP から取って保存）から 名前 → ID"""
+    path = os.path.join(HERE, "freee_cache", fname)
+    if not names or not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        items = json.load(f)
+    out = {}
+    for n in names:
+        hit = [t for t in items if t["name"] == n] or [t for t in items if n in t["name"]]
+        if hit:
+            out[n] = hit[0]["id"]
+        else:
+            print(f"  ⚠ freee_cache/{fname} に「{n}」がありません")
+    return out
+
+
 def chunks(items: list, size: int) -> list[list]:
     return [items[i:i + size] for i in range(0, len(items), size)]
 
@@ -367,6 +385,9 @@ def main():
     ap.add_argument("--month", type=int, required=True, help="対象月（例: 8）")
     ap.add_argument("--year", type=int, default=2026)
     ap.add_argument("--dry-run", action="store_true", help="freee に送信・アップロードせずプレビューのみ")
+    ap.add_argument("--emit-json", action="store_true",
+                    help="freee に送らず、申請の JSON を inputs_YYYYMM/freee_payloads.json に書く（クラウドで freee MCP から送る用）。"
+                         "証憑IDは upload_cache.json、テンプレート/勘定科目IDは freee_cache/*.json を使う")
     ap.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="領収書系の1申請あたり件数（既定 30）")
     ap.add_argument("--suica-batch-size", type=int, default=0, help="Suica の1申請あたり件数。0 = 分割せず1申請にまとめる（既定）")
     ap.add_argument("--no-suica-attach", action="store_true", help="Suica 一覧ファイルを補足資料として添付しない")
@@ -444,10 +465,15 @@ def main():
     receipt_ids: dict[str, int] = {}
     suica_file_ids: list[int] = []
     sub_ids: dict[str, int] = {}
-    if not args.dry_run:
+    emit = args.emit_json
+    if emit:
+        args.dry_run = False
+    if not args.dry_run and not emit:
         client = FreeeClient()
     # 名前指定のテンプレート（新聞図書費など）を解決して tid を差し替え
     template_ids = resolve_template_ids(client, {d.template_name for d in decisions.values() if d.template_name})
+    if emit:
+        template_ids = resolve_from_cache("line_templates.json", {d.template_name for d in decisions.values() if d.template_name})
     for d in decisions.values():
         if d.template_name and d.template_name in template_ids:
             d.tid = template_ids[d.template_name]
@@ -458,6 +484,8 @@ def main():
             print(f"  ※ テンプレートID（{', '.join(pending)}）は本番実行時に freee から解決します\n")
     named_accounts = {d.account_override for d in decisions.values() if isinstance(d.account_override, str)}
     account_ids = resolve_account_ids(client, named_accounts)
+    if emit:
+        account_ids.update(resolve_from_cache("account_items.json", {n for n in named_accounts if n not in account_ids}))
     unresolved = [n for n in named_accounts if n not in account_ids]
     if unresolved and not args.dry_run:
         print(f"エラー: 勘定科目 ID を解決できません: {unresolved}。freee の勘定科目名を確認してください。")
@@ -481,7 +509,25 @@ def main():
                 print(f"upload_seed.json から前回アップロード済みの領収書 {len(rpaths)} 件を再利用します")
             else:
                 print(f"⚠ upload_seed.json の件数（{len(seed.get('receipts', []))}）と領収書の件数（{len(rpaths)}）が違うので使いません")
-    if not args.dry_run:
+    if emit:
+        # クラウド: ファイルは freee にメールで送り、届いた receipt_id を upload_cache.json に書いておく（CLAUDE.md 参照）
+        need: dict[str, str] = {}
+        rpaths = sorted({e["receipt_path"] for e in receipt_entries if e.get("receipt_path")})
+        sfiles = suica_files if (suica_batches and not args.skip_suica) else []
+        skeys = sorted({f"{p}#{e.get('receipt_path', '')}" for e in receipt_entries for p in (e.get("sub_receipt_paths") or [])})
+        for k in rpaths + sfiles + skeys:
+            if k in upload_cache:
+                continue
+            need[k] = k.split("#")[0]
+        receipt_ids = {p: upload_cache[p] for p in rpaths if p in upload_cache}
+        suica_file_ids = [upload_cache[p] for p in sfiles if p in upload_cache]
+        sub_ids = {k: upload_cache[k] for k in skeys if k in upload_cache}
+        todo_path = os.path.join(base, "freee_upload_todo.json")
+        with open(todo_path, "w", encoding="utf-8") as f:
+            json.dump([{"key": k, "file": v} for k, v in need.items()], f, ensure_ascii=False, indent=1)
+        print(f"freee にまだ無い証憑: {len(need)} 件 → {os.path.relpath(todo_path, HERE)}"
+              f"（メールで freee に送り、receipt_id を upload_cache.json に書いてから再実行）\n")
+    if not args.dry_run and not emit:
         receipt_ids = upload_files(client, sorted({e["receipt_path"] for e in receipt_entries if e.get("receipt_path")}),
                                    "領収書", upload_cache, cache_path)
         if suica_batches and suica_files and not args.skip_suica:
@@ -520,6 +566,7 @@ def main():
         print(f"下書きベース: {base_ids}（申請の順に中身を入れる。足りなければ新規作成）\n")
 
     created: list[tuple[str, int]] = []
+    payloads: list[dict] = []
     for idx, (title, app_desc, batch, is_suica) in enumerate(plan):
         batch_total = sum(int(e["amount"]) for e in batch)
         print(f"--- {title}  {'[Suica]' if is_suica else '[領収書系]'}  ({len(batch)}件 / ¥{batch_total:,}) ---")
@@ -552,6 +599,18 @@ def main():
 
         if args.dry_run:
             continue
+        if emit:
+            if is_suica and args.skip_suica:
+                continue
+            app = ExpenseApplication(title=title, lines=lines, description=app_desc,
+                                     approval_flow_route_id=APPROVAL_FLOW_ROUTE_ID)
+            body = application_body(app, COMPANY_ID)
+            body["draft"] = True
+            upd = base_ids[idx] if idx < len(base_ids) else None
+            if upd:
+                body["issue_date"] = date.today().isoformat()
+            payloads.append({"title": title, "update_id": upd, "body": body})
+            continue
         if is_suica and args.skip_suica:
             print("  → 作成済みのためスキップ（--skip-suica）\n")
             continue
@@ -561,6 +620,13 @@ def main():
         created.append((title, result["id"]))
         print(f"  → 申請ID: {result['id']}\n")
 
+    if emit:
+        out = os.path.join(base, "freee_payloads.json")
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(payloads, f, ensure_ascii=False, indent=1)
+        miss = sum(1 for p in payloads for pl in p["body"]["purchase_lines"] if "receipt_id" not in pl)
+        print(f"→ {os.path.relpath(out, HERE)} に {len(payloads)} 申請を書きました（領収書IDなしの行 {miss} 件。Suica 行は領収書なしで正常）")
+        print("   update_id があれば PUT /api/1/expense_applications/{update_id}、無ければ POST（freee MCP）\n")
     guessed = [e for e in entries if e.get("guessed")]
     if guessed:
         print("=" * 60)

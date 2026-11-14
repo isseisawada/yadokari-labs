@@ -416,7 +416,7 @@ python3 submit_expenses.py --month 8
 | サイトやアプリで「領収書を発行」するとメールが来るもの（GO / S.RIDE / note / STATION WORK / Booking / Dropbox / えきねっと・EX） | スマホのアプリかブラウザで発行ボタンを押す | Gmail |
 | メールが来ないもの（OpenAI の領収書 / Amazon の適格請求書 / Google Cloud 前払い / Apple の購入履歴） | スマホで PDF 保存かスクショ → **このチャットに添付**（または件名「経費」で自分宛メール） | チャット / Gmail |
 | Suica 利用履歴 | **Claude が Mac の Chrome でモバイルSuica の Web（JRE ID: everlybrothers@）から利用履歴を取得**。Mac が使えないときだけアプリのスクショ | Dropbox / チャット |
-| 紙の領収書 | 写真を Dropbox の `経費関連/YYYYMM/photo/` に入れる（またはチャットに添付） | Dropbox / チャット |
+| 紙の領収書 | **写真を件名「経費」で sawada@ 宛てにメール**（2026-11-14〜。iPhone の写真アプリでまとめて選択→共有→メール、画像サイズ「大」、20枚ずつ。会食はその場で1枚送り、本文に「誰と」を書くと参加者が確定する）。Dropbox の `photo/` は予備（Mac でコピーが要る） | Gmail |
 | ドル払いの円額 | カード明細アプリの該当行をスクショ → チャットに添付（経費でない行は黒塗りで OK） | チャット |
 
 - チャットに添付されたファイルは Claude が `inputs_2026MM/` の該当フォルダ（web_receipts / receipts / suica / supplements）に保存して git に残す
@@ -430,6 +430,24 @@ python3 submit_expenses.py --month 8
   - 法人契約の GO BUSINESS なら立替自体が不要（会社に請求書。利用料5%）
 - カード明細のスクショは「立替の一覧」として使う：明細にあって領収書が無いものを Claude が「足りないものリスト」にして返す
 - 最後に freee（スマホのブラウザ/アプリ）で内容を確認して「申請」を押す
+
+## クラウドだけで freee に登録する流れ（2026-11-14〜。依頼文 C・Mac 不要）
+
+1. **紙の領収書**: `from:sawada@yadokari.net subject:経費 has:attachment` のメールの添付を `download_gmail_attachment` で
+   `inputs_YYYYMM/receipts/` に保存（ファイル名 `mail_<messageId>_<n>.<拡張子>`）。本文に名前があれば参加者として overrides.json に（`_source: メール本文`）。
+   同じ写真が2通に入っていたら1つだけ使う（sha256 で判定）
+2. 読み取り → entries → カレンダーで参加者 → `merge_entries.py` → `submit_expenses.py --month M --dry-run`
+3. `python3 submit_expenses.py --month M --emit-json`
+   → `inputs_YYYYMM/freee_upload_todo.json`（まだ freee に無い証憑の一覧）と `freee_payloads.json`（申請の JSON）を書く
+   - テンプレート・勘定科目の ID は `freee_cache/line_templates.json` / `account_items.json`（freee MCP で取得して保存。変わったら取り直す）
+4. todo の各ファイルを **1通に1ファイル** で freee の取り込み用アドレス `1751051196+256d@mail-receiver.freee.co.jp` に `send_message`
+   （添付はファイル参照 `sha256:<hash>:<絶対パス>`。件名はキー＝リポジトリ内のパス。転送はロゴ画像が混ざるので使わない）
+5. 約2分後に `GET /api/1/receipts`（origin=mail、今日の日付）で新しい receipt_id を取り、**送った順＝ID の昇順**で対応付けて
+   `inputs_YYYYMM/upload_cache.json`（キー → receipt_id）に書く。1通に複数ファイルを付けた場合も添付順に ID が振られる（11/14 確認）が、確実さのため1通1ファイル
+6. もう一度 `--emit-json` → todo が 0 件になったら、`freee_payloads.json` の各申請を freee MCP で
+   `update_id` があれば `PUT /api/1/expense_applications/{update_id}`、無ければ `POST`（body はそのまま）
+7. 余った下書きベースは DELETE。commit & push → Slack に freee の URL（`https://secure.freee.co.jp/expense_applications_v2/{ID}`）
+- 澤田さんの作業は freee で内容を見て「申請」を押すだけ
 
 ## 領収書の保存先は Dropbox（2026年11月〜。Google ドライブは遅いのでやめた）
 
@@ -479,12 +497,12 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 |---|---|---|
 | 25日 6:23 | trig_0176aYqYAPrHWkmfH731DVA5 | 今月分を途中取り込み。**freee に下書きベースを3つ作る**（下記）。月末までにやることを Slack へ |
 | 28日 6:23 | trig_01DZWNMLBdBYBVr4GBsxZrXj | 追加取り込み、Dropbox photo/ の枚数確認、月末リマインド |
-| 1日 6:17 | trig_01F8ydcouKNh7uL2sn8KyGBX | 前月分を取り込み → 読み取り → カレンダーで参加者 → ドライラン。足りないもの・確認事項を Slack へ |
-| 2日 6:23 | trig_01WM8pzChMkD47o9ZJL9f55z | Mac で取った分・遅れたメールを足してドライランやり直し。「今日中に依頼文C → 申請」を Slack へ |
+| 1日 6:17 | trig_01F8ydcouKNh7uL2sn8KyGBX | 前月分を取り込み（紙の写真メールも）→ 読み取り → カレンダーで参加者 → ドライラン → **freee に証憑をメールで送って下書きに登録**。足りないもの・確認事項を Slack へ |
+| 2日 6:23 | trig_01WM8pzChMkD47o9ZJL9f55z | 増えた分（Mac で取った Suica 等・遅れたメール）を足して freee の下書きを更新。「今日中に freee で確認して申請」を Slack へ |
 | 3日 6:23 | trig_019e2JHXMMFHs8R2Bhx1YEC9 | 期限日。freee で申請済みか確認し、未申請なら強めに Slack へ |
 
 - 取り込み先はリポジトリの `inputs_YYYYMM/web_receipts/`（クラウドから Dropbox には PDF を書けない）
-- ログインが要るもの（Suica・Apple・テレキューブ/STATION WORK の発行・Amazon）と紙の写真は Mac の依頼文 A
+- ログインが要るもの（Suica・テレキューブ/STATION WORK の発行・Amazon）だけ Mac の依頼文 A。紙の写真は件名「経費」のメール、Apple は更新の領収書メールで届く
 
 ### freee の下書きベース（25日に作る）
 
@@ -513,9 +531,9 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 | できないこと | 理由 | 今のやり方 |
 |---|---|---|
 | サイトにログインして取得・発行（Suica・Apple・テレキューブ/STATION WORK の発行・Amazon・note） | ブラウザが無い。Mac の Remote Control フォルダが「クラウドから使えない」状態 | 澤田さんが Mac の Claude に依頼文 A |
-| Dropbox の写真の中身を読む | ダウンロードURLがネットワーク制限で 403、`fetch` は画像非対応 | Mac の Claude がリポジトリにコピー（依頼文 A） |
+| Dropbox の写真の中身を読む | ダウンロードURLがネットワーク制限で 403、`fetch` は画像非対応 | 紙の写真は件名「経費」のメールでもらう（2026-11-14〜）。Dropbox に入った分だけ Mac がコピー |
 | Dropbox に PDF を書く | MCP はテキストしか作れない | 保存先はリポジトリ |
-| freee に領収書ファイルを添付して登録 | freee のトークン（`.env`）が Mac にしか無い。MCP では画像の添付ができない | Mac の Claude に依頼文 C（`submit_expenses.py`） |
+| ~~freee に領収書ファイルを添付して登録~~ | → 2026-11-14 から「クラウドだけで freee に登録する流れ」でできる | 依頼文 C は不要（Mac で `submit_expenses.py` を使うのは予備） |
 | アプリでしか出せない領収書（GO・S.RIDE） | アプリ専用 | 澤田さんが月末にスマホで発行 |
 
 ### 試運転で分かったこと

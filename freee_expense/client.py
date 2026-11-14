@@ -42,6 +42,59 @@ class ExpenseApplication:
     approval_flow_route_id: int | None = None
 
 
+def application_body(application: "ExpenseApplication", company_id: int) -> dict:
+    """申請の JSON ボディを作る（freee に送らない。クラウドで freee MCP から送るときにも使う）"""
+    lines = []
+    for line in application.lines:
+        if line.line_template_id:
+            # 新形式: ネスト構造 + line_template_id
+            eal: dict = {
+                "description": line.description,
+                "amount": line.amount,
+                "expense_application_line_template_id": line.line_template_id,
+            }
+            # テンプレート既定の勘定科目を上書きしたい場合
+            if line.account_item_id:
+                eal["account_item_id"] = line.account_item_id
+            eals = [eal]
+            if line.split_amounts and sum(line.split_amounts) == line.amount:
+                eals = [{**eal, "amount": a} for a in line.split_amounts]
+            purchase_line: dict = {
+                "transaction_date": line.expense_date.isoformat(),
+                "expense_application_lines": eals,
+            }
+            if line.receipt_ids:
+                purchase_line["receipt_id"] = line.receipt_ids[0]
+            if line.sub_receipt_ids:
+                purchase_line["sub_receipt_ids"] = list(line.sub_receipt_ids)
+            lines.append(purchase_line)
+        else:
+            # 旧形式（互換性用）
+            entry: dict = {
+                "amount": line.amount,
+                "description": line.description,
+                "transaction_date": line.expense_date.isoformat(),
+            }
+            if line.account_item_id:
+                entry["account_item_id"] = line.account_item_id
+            if line.receipt_ids:
+                entry["receipt_ids"] = line.receipt_ids
+            lines.append(entry)
+
+    body = {
+        "company_id": company_id,
+        "title": application.title,
+        "description": application.description,
+        "purchase_lines": lines,
+    }
+
+    # 承認経路 ID（コーポレートが API 用に発行）
+    if application.approval_flow_route_id:
+        body["approval_flow_route_id"] = application.approval_flow_route_id
+
+    return body
+
+
 class FreeeClient:
     def __init__(self):
         token = load_token()
@@ -188,54 +241,8 @@ class FreeeClient:
         """経費申請を作成して申請データを返す。update_id があれば、その下書き（25日に作るベース）を中身ごと置き換える"""
         company_id = self.get_company_id()
 
-        lines = []
-        for line in application.lines:
-            if line.line_template_id:
-                # 新形式: ネスト構造 + line_template_id
-                eal: dict = {
-                    "description": line.description,
-                    "amount": line.amount,
-                    "expense_application_line_template_id": line.line_template_id,
-                }
-                # テンプレート既定の勘定科目を上書きしたい場合
-                if line.account_item_id:
-                    eal["account_item_id"] = line.account_item_id
-                eals = [eal]
-                if line.split_amounts and sum(line.split_amounts) == line.amount:
-                    eals = [{**eal, "amount": a} for a in line.split_amounts]
-                purchase_line: dict = {
-                    "transaction_date": line.expense_date.isoformat(),
-                    "expense_application_lines": eals,
-                }
-                if line.receipt_ids:
-                    purchase_line["receipt_id"] = line.receipt_ids[0]
-                if line.sub_receipt_ids:
-                    purchase_line["sub_receipt_ids"] = list(line.sub_receipt_ids)
-                lines.append(purchase_line)
-            else:
-                # 旧形式（互換性用）
-                entry: dict = {
-                    "amount": line.amount,
-                    "description": line.description,
-                    "transaction_date": line.expense_date.isoformat(),
-                }
-                if line.account_item_id:
-                    entry["account_item_id"] = line.account_item_id
-                if line.receipt_ids:
-                    entry["receipt_ids"] = line.receipt_ids
-                lines.append(entry)
-
-        body = {
-            "company_id": company_id,
-            "title": application.title,
-            "description": application.description,
-            "purchase_lines": lines,
-        }
-
-        # 承認経路 ID（コーポレートが API 用に発行）
-        if application.approval_flow_route_id:
-            body["approval_flow_route_id"] = application.approval_flow_route_id
-            print(f"  承認経路 ID: {application.approval_flow_route_id}")
+        body = application_body(application, company_id)
+        print(f"  承認経路 ID: {application.approval_flow_route_id}")
 
         # 部門(section) は付けない（承認経路 1469199 で決まる。以前は sections[0]=「BETTARA（使わない）」を付けていた）
 

@@ -44,6 +44,8 @@
     .s-btn.active { background: var(--ink); color: var(--white); font-weight: 700; }
     .s-btn .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--line-strong); opacity: 1; transition: background .15s; flex-shrink: 0; }
     .s-btn.has-sel .dot { background: var(--ink); }
+    .s-btn.active .dot { background: var(--on-ink-sub); }
+    .s-btn.active.has-sel .dot { background: var(--white); }
     .btn-pdf { padding: 7px 16px; background: var(--ink); color: var(--white); border: none; border-radius: var(--r-pill); font-size: var(--fs-l); font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
     .btn-pdf:hover { background: var(--text); }
     .hdr-modes { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }
@@ -119,7 +121,13 @@
     .mg-row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: var(--r); transition: background .12s; }
     .mg-row.on { background: var(--surface); }
     .mg-ico { font-size: var(--fs-l); width: 20px; text-align: center; flex-shrink: 0; }
-    .mg-name { flex: 1; font-size: var(--fs-m); font-weight: 500; color: var(--text); }
+    /* 名前と金額は1行のまま横に送れる。台数の操作は右に固定。続きがある側は薄くして知らせる */
+    .mg-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .mg-main::-webkit-scrollbar { display: none; }
+    .mg-main.more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+    .mg-main.more-l { -webkit-mask-image: linear-gradient(to right, transparent, #000 32px); mask-image: linear-gradient(to right, transparent, #000 32px); }
+    .mg-main.more-l.more-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
+    .mg-name { flex: 1 0 auto; white-space: nowrap; font-size: var(--fs-m); font-weight: 500; color: var(--text); }
     .mg-row.on .mg-name { color: var(--ink); font-weight: 600; }
     .mg-price { font-size: var(--fs-l); font-weight: 600; color: var(--sub); white-space: nowrap; min-width: 88px; text-align: right; }
     .mg-row.on .mg-price { color: var(--ink); }
@@ -2000,6 +2008,15 @@ function sectionCard(title, sub) {
   return c;
 }
 
+// 横に続きがあるかで、左右の薄くする印を付け外しする
+function mgFade(el) {
+  el.classList.toggle('more-l', el.scrollLeft > 1);
+  el.classList.toggle('more-r', el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+}
+function mgFadeAll() { document.querySelectorAll('.mg-main').forEach(mgFade); }
+window.addEventListener('resize', mgFadeAll);
+new MutationObserver(() => requestAnimationFrame(mgFadeAll)).observe(document.documentElement, { childList: true, subtree: true });
+
 function modelListGrouped(title, sub, groups, modelsArr, s) {
   const c = sectionCard(title, sub);
   c.id = 'sec-model';
@@ -2028,7 +2045,9 @@ function modelListGrouped(title, sub, groups, modelsArr, s) {
       btnP.className = 'qty-btn'; btnP.textContent = '+';
       btnP.onclick = (e) => { e.stopPropagation(); s.modelQtys[mid] = qty + 1; update(); };
       ctrl.append(btnM, valSpan, btnP);
-      row.append(ico, name, priceEl, ctrl);
+      const main = div('mg-main'); main.append(ico, name, priceEl);
+      main.addEventListener('scroll', () => mgFade(main), { passive: true });
+      row.append(main, ctrl);
       grpDiv.appendChild(row);
     });
     c.appendChild(grpDiv);

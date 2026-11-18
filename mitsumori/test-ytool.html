@@ -463,6 +463,7 @@
     @media (max-width: 1060px) { .sidebar { display: none; } .sum-panel { width: 252px; } }
     @media (max-width: 760px) {
       .app { flex-direction: column; padding: 0; gap: 0; }
+      .main { align-self: stretch; } /* 縦に並べたとき、中身の長さで横に広がらないように */
       .sum-panel { width: 100%; position: static; }
       .card { border-radius: 0; border-left: none; border-right: none; }
       .sum-card { border-radius: 0; border-left: none; border-right: none; }

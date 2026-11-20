@@ -11,5 +11,11 @@
     "files": [
       "inputs_202611/receipts/mail_1a1d964650528a69_1.jpg"
     ]
+  },
+  "1a1fab12619aee64": {
+    "subject": "[GitHub] Payment Receipt for isseisawada",
+    "files": [
+      "inputs_202611/web_receipts/github-isseisawada-receipt-2026-11-20.pdf"
+    ]
   }
 }

@@ -21,5 +21,17 @@
     "participants": [],
     "invoice_number": "T9810508010871",
     "receipt_path": "inputs_202611/receipts/mail_1a1d964650528a69_1.jpg"
+  },
+  {
+    "date": "2026-11-20",
+    "vendor": "GitHub",
+    "amount": 1260,
+    "kind": "receipt",
+    "account": "通信費",
+    "description": "",
+    "ocr_description": "GitHub Actions 2026年10月分利用料",
+    "participants": [],
+    "invoice_number": "",
+    "receipt_path": "inputs_202611/web_receipts/github-isseisawada-receipt-2026-11-20.pdf"
   }
 ]

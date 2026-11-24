@@ -5,7 +5,7 @@ const vm = require('vm');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { mergeHearing_, robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_, isNotice_ };', ctx);
+vm.runInContext(fs.readFileSync(__dirname + '/Code.gs', 'utf8') + '\nthis.f = { mergeHearing_, robotsAllows_, htmlToText_, isOfficial_, isMonthly_, targets_, judgeChange_, lastRows_, crawlOne_, isOwn_, isAbout_, keepMaster_, changeLine_, codeOf_, missingOf_, nameOf_, hearingSummary_, isHearing_, isNotice_, repairRows_ };', ctx);
 const f = ctx.f;
 
 // robots.txt
@@ -278,6 +278,17 @@ assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ
   hour = '17'; ctx.flushChanges_(p, null, 'URL'); assert.deepStrictEqual(sent[1], ['・C']);
   hour = '23'; ctx.flushChanges_(p, null, 'URL'); assert.strictEqual(sent.length, 2);
   assert.ok(!Object.keys(props).some(k => k.startsWith('CHG_')));
+}
+
+// 11/24 の修復：壊れた行（J列が日付）は履歴から G〜L を作り直し、ほかの行は K・L だけ直す
+{
+  const hist = [['2026/10/25', "'011002", '', '', '', '掲載あり', 'https://a', 'HTML', '2026/08/04', 'ページA', '要旨A', '基準総則どおり', '', 'なし'],
+    ['2026/11/24', '011002', '', '', '', '未発見（要確認）', '', '', '', '', '', '', '', '']].map(r => r.concat(Array(19 - r.length).fill('')));
+  const bad = ['011002', '', '', '', '', '掲載あり', '要旨A', '基準総則どおり', '', '2026/11/24', 1, '2025/10/07'];
+  const ok = ['012025', '', '', '', '', '掲載あり（県の基準）', 'https://g', 'H', 'I', 'J', 2, 'x'];
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(f.repairRows_([bad, ok], hist))), [
+    ['https://a', '【掲載あり】ページA（2026/08/04）\nhttps://a', '要旨A', '基準総則どおり', 'なし', '2026/10/25'],
+    ['https://g', 'H', 'I', 'J', '', '2026/10/26']]);
 }
 
 console.log('ok');

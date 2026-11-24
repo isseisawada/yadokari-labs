@@ -76,6 +76,12 @@ function tick() {
   const keys = PropertiesService.getUserProperties();
   const ss = SpreadsheetApp.getActive();
   const master = ss.getSheetByName(SHEET_MASTER);
+  if (!p.getProperty('REPAIR_1124')) { // 1回だけ：列ずれで壊した G〜L 列を履歴から作り直す
+    const log0 = ss.getSheetByName(SHEET_LOG);
+    const fixed = repairRows_(master.getRange(2, 1, master.getLastRow() - 1, 12).getValues(), log0.getRange(2, 1, Math.max(log0.getLastRow() - 1, 1), 19).getValues());
+    master.getRange(2, 7, fixed.length, 6).setValues(fixed);
+    p.setProperty('REPAIR_1124', new Date().toISOString());
+  }
   hearings_(p, keys, ss, master); // ヒアリングの取り込みと集計は毎回（公式情報の回が終わっていても）
   flushChanges_(p, keys, ss.getUrl());
 
@@ -337,6 +343,29 @@ function header_(res, name) {
   return k ? String(h[k]) : '';
 }
 
+// ---- 2026/11/24 の修復 ----
+// 11/19 に G・H 列が足されたあとも古い列の位置に書き、G〜L 列を壊した。履歴から作り直す。
+// 今日のクロールで上書きした行（J列に日付が入っている行）は G〜L を、ほかの行は K・L（改訂版・取得日）だけを直す。返すのは各行の [G, H, I, J, K, L]
+function repairRows_(m, h) {
+  const day = v => Object.prototype.toString.call(v) === '[object Date]' ? Utilities.formatDate(v, 'Asia/Tokyo', 'yyyy/MM/dd') : String(v || '');
+  const by = {};
+  h.forEach(x => { const c = String(x[1]).replace(/^'/, '').padStart(6, '0'); (by[c] = by[c] || []).push(x); });
+  return m.map(r => {
+    const rows = by[String(r[0]).padStart(6, '0')] || [];
+    const same = rows.filter(x => x[5] === r[5]); // マスタの状態と同じ記録
+    const last = same[same.length - 1];
+    const K = last ? String(last[13] || '') : '';
+    const L = last ? day(last[0]) : /^掲載あり（県の基準）/.test(r[5]) ? '2026/10/26' : '';
+    if (!/^\d{4}\//.test(day(r[9]))) return [r[6], r[7], r[8], r[9], K, L]; // 壊れていない行
+    const src = same.filter(x => x[6]).pop() || last;
+    const text = (src && src[10] ? src : same.filter(x => x[10]).pop()) || {};
+    const seen = {};
+    const pages = rows.filter(x => x[6]).reverse().filter(x => !seen[x[5] + x[6]] && (seen[x[5] + x[6]] = true))
+      .map(x => `【${x[5]}】${x[9]}${x[8] ? `（${day(x[8])}）` : ''}\n${x[6]}`).join('\n');
+    return [src ? src[6] : '', pages, text[10] || '', text[11] || '', K, L];
+  });
+}
+
 // ---- コードの自動更新 ----
 // Claude が澤田さんのドライブに「jichitai-crawler Code.gs <版> <sha256>」という名前でコードを置くと、次に動くときから
 // そのコードを読み込み、同じ名前の関数（tick・onOpen など）をそれに差し替えて動く。ここに貼ったコードは、読めないときの予備。
@@ -506,7 +535,7 @@ function hearings_(p, keys, ss, master) {
     if (p.getProperty('LAST_ERROR_H') !== String(e)) slack_(keys, `ヒアリングの取り込みが止まりました：${e}`);
     p.setProperty('LAST_ERROR_H', String(e));
   }
-  // 管理表に直接書かれた行にも団体コードを付け、マスタの集計（K〜N列）を計算し直す
+  // 管理表に直接書かれた行にも団体コードを付け、マスタの集計（M〜P列）を計算し直す
   const n = lastRow_(sheet) - 1;
   if (n < 1) return;
   const rows = sheet.getRange(2, 1, n, 22).getValues();

@@ -353,6 +353,9 @@ python3 submit_expenses.py --month 8
   {"match": {"vendor": "OpenAI", "amount": 3465}, "set": {"amount": 3615, "account": "通信費",
    "sub_receipt_paths": ["inputs_202609/supplements/card_fx_202609.png"]}}
   ```
+- **外貨払いの「明細待ち」リスト**: `inputs_YYYYMM/fx_pending.json`（日付・サービス・外貨額・カード・仮の円額・状態）。外貨の領収書を取り込んだら必ずここに足す
+  - 28日・1日・2日の自動実行の Slack に「カード明細（円）が必要なもの」として毎回一覧で出す（2026-11-25 澤田さん指示）
+  - スクショが届いたら amount を円額に直し、`sub_receipt_paths` に明細画像、status を「済」にする
 - OCR は USD 金額を円と読むことがある（9月: Dropbox 131.87 USD → ¥131 と誤読、実際は ¥21,910）
 
 ## 2026年9月分の振り返り（申請時に澤田さんが直したところ）

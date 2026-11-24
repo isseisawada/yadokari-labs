@@ -1,0 +1,15 @@
+[
+ {
+  "date": "2026-11-20",
+  "service": "GitHub Actions（10/20〜10/31分）",
+  "usd": 8.12,
+  "card": "Visa 3857（個人）",
+  "entry_match": {
+   "vendor": "GitHub",
+   "date": "2026-11-20"
+  },
+  "provisional_jpy": 1260,
+  "status": "明細の円額待ち",
+  "receipt_mail": "https://mail.google.com/mail/?authuser=sawada@yadokari.net#all/thread-f:1882411264699461220"
+ }
+]

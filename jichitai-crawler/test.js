@@ -244,4 +244,24 @@ assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ
   assert.strictEqual(vm.runInContext('tick', ctx), ctx.oldTick); // 壊れた写しは読まず、貼ってある版のまま
   assert.ok(/^失敗.*ハッシュ/.test(meta.CODE_STATUS));
 }
+// 変化の通知：その日の親投稿のスレッドにまとめる。親がもうあればそれを使う
+{
+  const calls = []; let history = [];
+  ctx.Utilities.formatDate = (d, tz, f) => f === 'M/d' ? '11/24' : '2026-11-24T00:00:00+09:00';
+  ctx.slackApi_ = (keys, method, q) => method === 'conversations.history' ? { messages: history } : (calls.push(q), { ts: 'T' + calls.length });
+  ctx.slack_ = (keys, text) => calls.push({ webhook: text });
+  const props = {}; const p = { getProperty: k => props[k], setProperty: (k, v) => { props[k] = v; } };
+  const keys = { getProperty: k => ({ HEARING_CHANNEL: 'C1', SLACK_BOT_TOKEN: 'x' })[k] };
+  vm.runInContext('this.notifyChanges_ = notifyChanges_;', ctx);
+  ctx.notifyChanges_(p, keys, 'URL', ['・A']); ctx.notifyChanges_(p, keys, 'URL', ['・B']);
+  assert.deepStrictEqual(calls.map(c => [c.thread_ts, c.text]), [[undefined, '11/24 自治体情報の動き（<URL|管理表を開く>）'], ['T1', '・A'], ['T1', '・B']]);
+  calls.length = 0; delete props.DIGEST; history = [{ ts: '9.1', text: '11/24 自治体情報の動き' }];
+  ctx.notifyChanges_(p, keys, 'URL', ['・C']);
+  assert.deepStrictEqual(calls.map(c => [c.thread_ts, c.text]), [['9.1', '・C']]);
+  calls.length = 0;
+  ctx.notifyChanges_(p, { getProperty: () => '' }, 'URL', ['・D']); // ボットが無ければ今までどおり
+  assert.ok(/公式情報の変化 1件/.test(calls[0].webhook));
+  assert.ok(f.isNotice_('11/24 自治体情報の動き'));
+}
+
 console.log('ok');

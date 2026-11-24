@@ -97,7 +97,8 @@ function tick() {
       log.appendRow(row);
       prev[t.code] = row;
       if (!keepMaster_(t.current, row[5])) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
-      if (row[17] === '変更') changes.push(changeLine_(t, before, row));
+      // 人が決めた状態（県の基準・コンテナの基準・ヒアリング）の行は、自前のページが見つかったときだけ知らせる（マスタは変わらないので）
+      if (row[17] === '変更' && !(/^(掲載あり（|ヒアリング)/.test(t.current) && row[5] !== '掲載あり')) changes.push(changeLine_(t, before, row));
       cursor++;
       p.setProperty('CURSOR', String(cursor));
       if (cursor > monthly) p.setProperty('TOWN_NEXT', String((townStart + cursor - monthly) % towns));
@@ -121,7 +122,7 @@ function tick() {
     throw e;
   } finally {
     // 変化は30分ごとの回でまとめて1通
-    if (changes.length) slack_(keys, `公式情報の変化 ${changes.length}件（<${ss.getUrl()}|管理表を開く>）\n` + changes.join('\n'));
+    if (changes.length) notifyChanges_(p, keys, ss.getUrl(), changes);
     lock.releaseLock();
   }
 }
@@ -446,6 +447,29 @@ function claudeJson_(system, schema, content, key, label) {
   return JSON.parse(msg.content.find(b => b.type === 'text').text);
 }
 
+// 変化の通知は、その日の最初の投稿「M/D 自治体情報の動き」のスレッドに足していく（チャンネルに投稿が並ばないように）
+function notifyChanges_(p, keys, sheetUrl, lines) {
+  const text = lines.join('\n');
+  try {
+    const ch = keys.getProperty('HEARING_CHANNEL');
+    if (!ch || !keys.getProperty('SLACK_BOT_TOKEN')) throw new Error('ボットの設定なし');
+    const now = new Date();
+    const title = Utilities.formatDate(now, 'Asia/Tokyo', 'M/d') + ' 自治体情報の動き';
+    let d = JSON.parse(p.getProperty('DIGEST') || '{}');
+    if (d.title !== title) {
+      // 今日の親投稿がもうあれば（人が立てたものも）それを使う
+      const oldest = new Date(Utilities.formatDate(now, 'Asia/Tokyo', "yyyy-MM-dd'T'00:00:00'+09:00'")).getTime() / 1000;
+      const found = (slackApi_(keys, 'conversations.history', { channel: ch, oldest, limit: 200 }).messages || [])
+        .find(m => String(m.text || '').includes(title) && (!m.thread_ts || m.thread_ts === m.ts));
+      d = { title, ts: found ? found.ts : slackApi_(keys, 'chat.postMessage', { channel: ch, text: `${title}（<${sheetUrl}|管理表を開く>）` }).ts };
+      p.setProperty('DIGEST', JSON.stringify(d));
+    }
+    slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: d.ts, text });
+  } catch (e) {
+    slack_(keys, `公式情報の変化 ${lines.length}件（<${sheetUrl}|管理表を開く>）\n` + text); // スレッドにできないときは今までどおり
+  }
+}
+
 function slack_(keys, text) {
   const url = keys.getProperty('SLACK_WEBHOOK_URL');
   if (!url) return console.log(text);
@@ -535,7 +559,7 @@ function lastRow_(sheet) {
 
 // グループ宛て（@channel・@here・ユーザーグループ）や「【お知らせ】」の投稿は、ヒアリングのメモではない
 function isNotice_(text) {
-  return /<!(channel|here|everyone|subteam\^)/.test(text || '') || /^[\s*_]*【お知らせ】/.test(String(text || '').replace(/<[@!][^>]*>/g, ''));
+  return /<!(channel|here|everyone|subteam\^)/.test(text || '') || /^[\s*_]*(【お知らせ】|\d+\/\d+ 自治体情報の動き)/.test(String(text || '').replace(/<[@!][^>]*>/g, ''));
 }
 
 // 通知と同じチャンネルなので、雑談（自治体名も役所の回答も無い投稿）は取り込まない

@@ -77,6 +77,7 @@ function tick() {
   const ss = SpreadsheetApp.getActive();
   const master = ss.getSheetByName(SHEET_MASTER);
   hearings_(p, keys, ss, master); // ヒアリングの取り込みと集計は毎回（公式情報の回が終わっていても）
+  flushChanges_(p, keys, ss.getUrl());
 
   if (p.getProperty('RUN_MONTH') !== month_()) newRun_(p, '');
   let cursor = Number(p.getProperty('CURSOR'));
@@ -122,7 +123,7 @@ function tick() {
     throw e;
   } finally {
     // 変化は30分ごとの回でまとめて1通
-    if (changes.length) notifyChanges_(p, keys, ss.getUrl(), changes);
+    if (changes.length) p.setProperty('CHG_' + Date.now(), changes.join('\n')); // ためておき、決まった時刻にまとめて知らせる
     lock.releaseLock();
   }
 }
@@ -445,6 +446,23 @@ function claudeJson_(system, schema, content, key, label) {
   const msg = JSON.parse(res.getContentText());
   if (msg.stop_reason !== 'end_turn') throw new Error(`Claude API の応答が途中で止まりました（${msg.stop_reason}）：${label}`);
   return JSON.parse(msg.content.find(b => b.type === 'text').text);
+}
+
+// 変化を知らせる時刻（日本時間の時）。1日にこの回数まで。30分ごとの回のうち、その時刻を過ぎた最初の回でまとめて出す
+const NOTIFY_HOURS = [9, 17];
+
+function flushChanges_(p, keys, sheetUrl) {
+  const now = new Date();
+  const hour = Number(Utilities.formatDate(now, 'Asia/Tokyo', 'H'));
+  const slot = NOTIFY_HOURS.filter(h => h <= hour).pop();
+  if (slot === undefined) return;
+  const key = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd') + ' ' + slot;
+  if (p.getProperty('LAST_NOTIFY') === key) return;
+  p.setProperty('LAST_NOTIFY', key);
+  const keysC = p.getKeys().filter(k => k.startsWith('CHG_')).sort();
+  if (!keysC.length) return;
+  notifyChanges_(p, keys, sheetUrl, keysC.map(k => p.getProperty(k)));
+  keysC.forEach(k => p.deleteProperty(k));
 }
 
 // 変化の通知は、その日の最初の投稿「M/D 自治体情報の動き」のスレッドに足していく（チャンネルに投稿が並ばないように）

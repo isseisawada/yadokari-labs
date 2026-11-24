@@ -264,4 +264,20 @@ assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ
   assert.ok(f.isNotice_('11/24 自治体情報の動き'));
 }
 
+// 変化はためておき、9時と17時を過ぎた最初の回にだけまとめて出す
+{
+  let hour = '8'; const sent = [];
+  ctx.Utilities.formatDate = (d, tz, f) => f === 'H' ? hour : '2026-11-24';
+  ctx.notifyChanges_ = (p, keys, url, lines) => sent.push(lines);
+  const props = { CHG_1: '・A', CHG_2: '・B' };
+  const p = { getProperty: k => props[k], setProperty: (k, v) => { props[k] = v; }, getKeys: () => Object.keys(props), deleteProperty: k => { delete props[k]; } };
+  vm.runInContext('this.flushChanges_ = flushChanges_; notifyChanges_ = this.notifyChanges_;', ctx);
+  ctx.flushChanges_(p, null, 'URL'); assert.strictEqual(sent.length, 0); // 9時前は出さない
+  hour = '9'; ctx.flushChanges_(p, null, 'URL'); assert.deepStrictEqual(sent, [['・A', '・B']]);
+  props.CHG_3 = '・C'; hour = '12'; ctx.flushChanges_(p, null, 'URL'); assert.strictEqual(sent.length, 1); // 次は17時まで待つ
+  hour = '17'; ctx.flushChanges_(p, null, 'URL'); assert.deepStrictEqual(sent[1], ['・C']);
+  hour = '23'; ctx.flushChanges_(p, null, 'URL'); assert.strictEqual(sent.length, 2);
+  assert.ok(!Object.keys(props).some(k => k.startsWith('CHG_')));
+}
+
 console.log('ok');

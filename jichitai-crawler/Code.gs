@@ -97,7 +97,7 @@ function tick() {
       const row = crawlOne_(t, before, keys, budget);
       log.appendRow(row);
       prev[t.code] = row;
-      if (!keepMaster_(t.current, row[5])) master.getRange(t.row, 6, 1, 5).setValues([[row[5], row[10], row[11], row[13], row[0]]]);
+      if (!keepMaster_(t.current, row[5])) master.getRange(t.row, 6, 1, 7).setValues([[row[5], row[6], row[6] ? `【${row[5]}】${row[9]}${row[8] ? `（${row[8]}）` : ''}\n${row[6]}` : '', row[10], row[11], row[13], row[0]]]); // F状態 G根拠ページ H確認したページ I要旨 J傾向 K改訂版 L取得日（2026/11/19 に G・H 列が足された）
       // 人が決めた状態（県の基準・コンテナの基準・ヒアリング）の行は、自前のページが見つかったときだけ知らせる（マスタは変わらないので）
       if (row[17] === '変更' && !(/^(掲載あり（|ヒアリング)/.test(t.current) && row[5] !== '掲載あり')) changes.push(changeLine_(t, before, row));
       cursor++;
@@ -513,7 +513,7 @@ function hearings_(p, keys, ss, master) {
   const codes = rows.map(r => [r[20] !== '' ? r[20] : (r[2] || r[3] ? codeOf_(masterRows, r[2], r[3]) : '')]);
   sheet.getRange(2, 21, n, 1).setNumberFormat('@').setValues(codes);
   rows.forEach((r, i) => { r[20] = codes[i][0]; });
-  master.getRange(2, 11, masterRows.length, 4).setValues(hearingSummary_(rows, masterRows.map(r => String(r[0]).padStart(6, '0'))));
+  master.getRange(2, 13, masterRows.length, 4).setValues(hearingSummary_(rows, masterRows.map(r => String(r[0]).padStart(6, '0'))));
 }
 
 function intakeSlack_(p, keys, sheet, masterRows, sheetUrl) {
@@ -613,7 +613,7 @@ function codeOf_(masterRows, pref, city) {
   return hits.length === 1 ? String(hits[0][0]).padStart(6, '0') : '';
 }
 
-// マスタの K〜N 列（ヒアリング件数／最新日／最新の結論／見解の変化）を団体コードごとに計算
+// マスタの M〜P 列（ヒアリング件数／最新日／最新の結論／見解の変化）を団体コードごとに計算
 function hearingSummary_(rows, codes) {
   const by = {};
   rows.forEach(r => {

@@ -146,9 +146,9 @@ assert.strictEqual(f.judgeChange_(prev, { status: '掲載あり', tendency: '基
 const atsugi = { pref: '神奈川県', name: '厚木市', current: '掲載あり' };
 const crow = Array(19).fill(''); crow[5] = '掲載なし（確認済）'; crow[6] = 'https://www.city.atsugi.kanagawa.jp/a.html'; crow.oneline = '継続使用なら建築物';
 assert.strictEqual(f.changeLine_(atsugi, ['', '', '', '', '', '掲載あり'], crow),
-  '・【要確認】神奈川県厚木市　掲載あり → 掲載なし｜継続使用なら建築物 <https://www.city.atsugi.kanagawa.jp/a.html|ページ>');
+  '• *【要確認】神奈川県厚木市* 掲載あり → 掲載なし｜継続使用なら建築物 <https://www.city.atsugi.kanagawa.jp/a.html|ページ>');
 const crow2 = Array(19).fill(''); crow2[5] = '掲載なし（確認済）';
-assert.strictEqual(f.changeLine_({ pref: '宮城県', name: '（県）', current: '' }, null, crow2), '・宮城県　なし → 掲載なし');
+assert.strictEqual(f.changeLine_({ pref: '宮城県', name: '（県）', current: '' }, null, crow2), '• *宮城県* なし → 掲載なし');
 
 // ---- ヒアリング ----
 const mrows = [['200000', '長野県', '（県）', '都道府県'], ['203246', '長野県', '立科町', '町'], ['203238', '長野県', '御代田町', '町'],
@@ -254,7 +254,7 @@ assert.ok(f.keepMaster_('ヒアリングでは不可（1日単位の設置のみ
   const keys = { getProperty: k => ({ HEARING_CHANNEL: 'C1', SLACK_BOT_TOKEN: 'x' })[k] };
   vm.runInContext('this.notifyChanges_ = notifyChanges_;', ctx);
   ctx.notifyChanges_(p, keys, 'URL', ['・A']); ctx.notifyChanges_(p, keys, 'URL', ['・B']);
-  assert.deepStrictEqual(calls.map(c => [c.thread_ts, c.text]), [[undefined, '11/24 自治体情報の動き（<URL|管理表を開く>）'], ['T1', '・A'], ['T1', '・B']]);
+  assert.deepStrictEqual(calls.map(c => [c.thread_ts, c.text]), [[undefined, '*11/24 自治体情報の動き*（<URL|管理表を開く>）'], ['T1', '・A'], ['T1', '・B']]);
   calls.length = 0; delete props.DIGEST; history = [{ ts: '9.1', text: '11/24 自治体情報の動き' }];
   ctx.notifyChanges_(p, keys, 'URL', ['・C']);
   assert.deepStrictEqual(calls.map(c => [c.thread_ts, c.text]), [['9.1', '・C']]);

@@ -128,11 +128,11 @@ function tick() {
   }
 }
 
-// 通知の1行：・【要確認】神奈川県厚木市　掲載あり → 掲載なし｜継続使用なら建築物 <URL|ページ>
+// 通知の1行（Slack の箇条書き「• 」と太字。中黒「・」は箇条書きにならない）：• *【要確認】神奈川県厚木市* 掲載あり → 掲載なし｜継続使用なら建築物 <URL|ページ>
 function changeLine_(t, before, row) {
   const short = x => String(x || 'なし').replace(/（.*）$/, '');
   const warn = t.current === '掲載あり' && row[5] !== '掲載あり' ? '【要確認】' : '';
-  return `・${warn}${t.pref}${place_(t)}　${short(before && before[5])} → ${short(row[5])}${row.oneline ? '｜' + row.oneline : ''}` + (row[6] ? ` <${row[6]}|ページ>` : '');
+  return `• *${warn}${t.pref}${place_(t)}* ${short(before && before[5])} → ${short(row[5])}${row.oneline ? '｜' + row.oneline : ''}` + (row[6] ? ` <${row[6]}|ページ>` : '');
 }
 
 function crawlOne_(t, prev, keys, budget) {
@@ -479,7 +479,7 @@ function notifyChanges_(p, keys, sheetUrl, lines) {
       const oldest = new Date(Utilities.formatDate(now, 'Asia/Tokyo', "yyyy-MM-dd'T'00:00:00'+09:00'")).getTime() / 1000;
       const found = (slackApi_(keys, 'conversations.history', { channel: ch, oldest, limit: 200 }).messages || [])
         .find(m => String(m.text || '').includes(title) && (!m.thread_ts || m.thread_ts === m.ts));
-      d = { title, ts: found ? found.ts : slackApi_(keys, 'chat.postMessage', { channel: ch, text: `${title}（<${sheetUrl}|管理表を開く>）` }).ts };
+      d = { title, ts: found ? found.ts : slackApi_(keys, 'chat.postMessage', { channel: ch, text: `*${title}*（<${sheetUrl}|管理表を開く>）` }).ts };
       p.setProperty('DIGEST', JSON.stringify(d));
     }
     slackApi_(keys, 'chat.postMessage', { channel: ch, thread_ts: d.ts, text });

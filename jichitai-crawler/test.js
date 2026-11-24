@@ -187,7 +187,7 @@ assert.deepStrictEqual([...f.hearingSummary_([drow], ['132012'])[0]], [1, '2026/
 // お知らせ投稿は取り込まない
 assert.ok(f.isNotice_('<!subteam^S08S8GB1346> *【お知らせ】役所ヒアリングの記録'));
 assert.ok(f.isNotice_('*【お知らせ】* 来週から'));
-assert.ok(f.isNotice_('<!here> 八王子市の件'));
+assert.ok(!f.isNotice_('<!subteam^S08V9GSRP1B>\n*山梨県　中北建設事務所　建築課*')); // メンション付きのヒアリングは取り込む
 assert.ok(!f.isNotice_('八王子市の建築指導課キシさんに電話。車両扱いでOK'));
 assert.ok(!f.isNotice_('<@U06PA4K9N4C> 八王子市に電話しました'));
 

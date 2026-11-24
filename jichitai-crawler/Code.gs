@@ -575,9 +575,9 @@ function lastRow_(sheet) {
   return i;
 }
 
-// グループ宛て（@channel・@here・ユーザーグループ）や「【お知らせ】」の投稿は、ヒアリングのメモではない
+// 「【お知らせ】」と通知の親投稿は、ヒアリングのメモではない。グループ宛てのメンションだけでは外さない（メンション付きのヒアリング報告があるため。雑談は isHearing_ で外れる）
 function isNotice_(text) {
-  return /<!(channel|here|everyone|subteam\^)/.test(text || '') || /^[\s*_]*(【お知らせ】|\d+\/\d+ 自治体情報の動き)/.test(String(text || '').replace(/<[@!][^>]*>/g, ''));
+  return /^[\s*_]*(【お知らせ】|\d+\/\d+ 自治体情報の動き)/.test(String(text || '').replace(/<[@!][^>]*>/g, ''));
 }
 
 // 通知と同じチャンネルなので、雑談（自治体名も役所の回答も無い投稿）は取り込まない

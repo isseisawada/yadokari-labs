@@ -22,8 +22,6 @@
     .gate-box { background: var(--white); border-radius: var(--r-float); padding: 32px 28px; width: 100%; max-width: 360px; box-shadow: var(--shadow-float); text-align: center; }
     .gate-title { font-size: var(--fs-xl); font-weight: 800; color: var(--ink); }
     .gate-sub { font-size: var(--fs-s); color: var(--sub); margin: 6px 0 18px; }
-    #gateInput { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--r); font-size: var(--fs-l); font-family: inherit; box-sizing: border-box; }
-    #gateInput:focus { outline: none; border-color: var(--ink); }
     .gate-err { display: none; color: var(--danger); font-size: var(--fs-l); margin-top: 8px; }
     #gateBtn { width: 100%; margin-top: 16px; padding: 11px; background: var(--ink); color: var(--white); border: none; border-radius: var(--r-pill); font-size: var(--fs-l); font-weight: 700; cursor: pointer; font-family: inherit; }
     #gateBtn:hover { background: var(--text); }
@@ -595,14 +593,13 @@ function ytIco(e){ return '<svg class="yt-ic" aria-hidden="true"><use href="#i-'
 
 <div id="testBadge">TEST 環境（本番データには影響しません）</div>
 
-<!-- パスワードゲート -->
+<!-- ログイン（@yadokari.net の Google アカウントだけ） -->
 <div id="gate">
   <div class="gate-box">
     <div class="gate-title">見積もりシミュレーター</div>
-    <div class="gate-sub">チームの合言葉を入力してください</div>
-    <input type="password" id="gateInput" placeholder="合言葉" autocomplete="off">
-    <div class="gate-err" id="gateErr">合言葉が違います</div>
-    <button id="gateBtn">入る</button>
+    <div class="gate-sub">社内の Google アカウント（@yadokari.net）でログインします</div>
+    <div class="gate-err" id="gateErr"></div>
+    <button id="gateBtn">Google でログイン</button>
   </div>
 </div>
 
@@ -1131,7 +1128,6 @@ const seriesQty  = (s) => Object.values(s.modelQtys||{}).reduce((a,b) => a+b, 0)
 // ============================================================
 const SUPABASE_URL = 'https://bvwyyocqynbftjnkzsvw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_9CZ74mKWN3kdwbXDzZT_dw_QwhkP4ZU';
-const TEAM_PASS = 'spu2026';  // ★チーム共通の合言葉（変更可）
 const sb = (window.supabase && SUPABASE_URL) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 // ---- テスト環境の分離 ----
@@ -4104,26 +4100,27 @@ async function bootstrap() {
   refreshPendingList();
 }
 function initGate() {
+  // ゾーニングと同じ Supabase（YADOKARI_works）の Google ログイン。@yadokari.net 以外は入れない
   const gate = document.getElementById('gate');
-  // 同一ブラウザのセッション中は再入力不要
-  if (sessionStorage.getItem('yadokari_gate_ok') === '1') { gate.style.display = 'none'; bootstrap(); return; }
-  gate.style.display = 'flex';
-  const inp = document.getElementById('gateInput');
   const btn = document.getElementById('gateBtn');
   const err = document.getElementById('gateErr');
-  setTimeout(() => inp.focus(), 50);
-  const submit = () => {
-    if (inp.value === TEAM_PASS) {
-      sessionStorage.setItem('yadokari_gate_ok', '1');
-      gate.style.display = 'none';
-      bootstrap();
-    } else {
-      err.style.display = 'block';
-      inp.value = ''; inp.focus();
-    }
+  const showErr = (msg) => { err.textContent = msg; err.style.display = 'block'; };
+  const isStaff = (sess) => /@yadokari\.net$/i.test((sess && sess.user && sess.user.email) || '');
+  btn.onclick = async () => {
+    btn.disabled = true;
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.href.split('#')[0], queryParams: { hd: 'yadokari.net', prompt: 'select_account' } },
+    });
+    if (error) { btn.disabled = false; showErr('ログインを始められませんでした。もう一度押してください。'); }
   };
-  btn.onclick = submit;
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  if (!sb) { gate.style.display = 'flex'; btn.disabled = true; showErr('ログインの仕組みを読み込めませんでした。画面を読み込み直してください。'); return; }
+  sb.auth.getSession().then(async ({ data }) => {
+    const sess = data && data.session;
+    if (isStaff(sess)) { gate.style.display = 'none'; bootstrap(); return; }
+    gate.style.display = 'flex';
+    if (sess) { await sb.auth.signOut(); showErr('YADOKARI の Google アカウント（@yadokari.net）でログインしてください。'); }
+  });
 }
 initGate();
 </script>

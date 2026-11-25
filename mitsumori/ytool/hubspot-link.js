@@ -1,4 +1,4 @@
-// Yツール版テスト（test-ytool.html）専用の写し。動きは ../hubspot-link.js と同じで、見た目だけ Yツールの部品にしている
+// Yツール版のテスト（test.html・test-ytool.html）用の写し。動きは ../hubspot-link.js と同じで、見た目だけ Yツールの部品にしている。本番の quote_app.html では読まない
 /* HubSpot 連携（テスト中）— test.html だけで読み込む。
  * 顧客情報の下に「HubSpot の取引」「支払条件」「概算で保存」を足し、
  * 「見積もりを確定」したら承認依頼（Slack）を出す。処理は Supabase の quote-hubspot。

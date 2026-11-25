@@ -1,4 +1,4 @@
-// Yツール版テスト（test-ytool.html）専用の写し。動きは ../formal-quote.js と同じで、見た目だけ Yツールの部品にしている
+// Yツール版のテスト（test.html・test-ytool.html）用の写し。動きは ../formal-quote.js と同じで、見た目だけ Yツールの部品にしている。本番の quote_app.html では読まない
 /* 正式な見積書（PDF）（テスト中）— test.html だけで読み込む。
  * 確定画面に「正式な見積書（PDF）」ボタンと追加の入力欄を足し、
  * samples/formal-quote-sample.html と同じ体裁の A4 1枚を隠し iframe に描いて印刷（PDF 保存）する。

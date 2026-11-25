@@ -1172,6 +1172,7 @@ async function cloudLoadAll() {
   applyOrSeed('custom_items', CUSTOM_ITEMS, v => { CUSTOM_ITEMS = v; SAVED_CUSTOM = structuredClone(v); localStorage.setItem(LS_CUSTOM, JSON.stringify(v)); });
   applyOrSeed('hidden_items', HIDDEN_ITEMS, v => { HIDDEN_ITEMS = v; SAVED_HIDDEN = structuredClone(v); localStorage.setItem(LS_HIDDEN, JSON.stringify(v)); });
   applyOrSeed('item_applied', ITEM_APPLIED, v => { ITEM_APPLIED = v; });
+  applyOrSeed('staff_email',  STAFF_EMAIL,  v => { STAFF_EMAIL = { ...STAFF_EMAIL, ...v }; });
 
   const { data: qs, error: e2 } = await sb.from('quotes').select('data,created_at').eq('ns', NS).order('created_at', { ascending: false });
   if (e2) throw e2;
@@ -1216,6 +1217,7 @@ function applyConfigChange(key, value) {
   if (key === 'prices')       { if (same(PRICE_OVR)) return; PRICE_OVR = value; localStorage.setItem(LS_PRICES, JSON.stringify(value)); }
   else if (key === 'memos')   { if (same(MEMO_DATA)) return; MEMO_DATA = value; localStorage.setItem(LS_MEMOS, JSON.stringify(value)); }
   else if (key === 'staff')   { if (same(STAFF_LIST)) return; STAFF_LIST = value; localStorage.setItem(LS_STAFF, JSON.stringify(value)); }
+  else if (key === 'staff_email') { STAFF_EMAIL = { ...STAFF_EMAIL, ...value }; return; }
   else if (key === 'item_applied') { ITEM_APPLIED = value; if (state.mode === 'admin' && _adminTab === 'approval') rerenderCurrentIfIdle(); return; }
   else if (key === 'custom_items' || key === 'hidden_items') {
     // 申請前の下書きがある端末は下書きを残し、確定値だけ更新する
@@ -1273,6 +1275,15 @@ const DEFAULT_STAFF = ['遠藤美智子','郷優里','小川晃輝','長尾航�
 function loadStaff() { try { return JSON.parse(localStorage.getItem(LS_STAFF) || 'null') || DEFAULT_STAFF.slice(); } catch(e) { return DEFAULT_STAFF.slice(); } }
 function saveStaff(arr) { localStorage.setItem(LS_STAFF, JSON.stringify(arr)); cloudSetConfig('staff', arr); }
 let STAFF_LIST = loadStaff();
+// ログインした人のメール → 担当者名（Google の名前はローマ字なので、メールで一覧の名前と結ぶ）。一度選ぶと覚えてクラウドで共有
+let ME_EMAIL = '';
+let STAFF_EMAIL = { 'sawada@yadokari.net': 'さわだいっせい', 'kajiyama@yadokari.net': '梶山大起', 'uesugi@yadokari.net': '上杉勢太', 'endo@yadokari.net': '遠藤美智子' };
+function myStaff() { return STAFF_EMAIL[ME_EMAIL] || ''; }
+function learnMyStaff(name) {
+  if (!ME_EMAIL || !name || STAFF_EMAIL[ME_EMAIL] === name) return;
+  STAFF_EMAIL = { ...STAFF_EMAIL, [ME_EMAIL]: name };
+  cloudSetConfig('staff_email', STAFF_EMAIL);
+}
 
 function loadOverrides() {
   try { return JSON.parse(localStorage.getItem(LS_PRICES) || '{}'); } catch(e) { return {}; }
@@ -1633,6 +1644,8 @@ function updateCitySelect() {
 function renderCustomerCard() {
   const c = sectionCard('顧客情報', '未記入でも構いません');
   const grid = div('cust-grid');
+  // 担当者が空なら、ログインした人を入れておく（自分で選び直したらそのまま）
+  if (!state.staffName && !state._staffTouched && STAFF_LIST.includes(myStaff())) state.staffName = myStaff();
 
   const prefOpts = '<option value="">都道府県</option>' +
     PREFECTURES.map(p => `<option value="${p}"${state.areaPref===p?' selected':''}>${p}</option>`).join('');
@@ -1662,7 +1675,7 @@ function renderCustomerCard() {
     </div>
   `;
   grid.querySelector('#custName').addEventListener('input', e => { state.customerName = e.target.value; });
-  grid.querySelector('#staffName').addEventListener('change', e => { state.staffName = e.target.value; });
+  grid.querySelector('#staffName').addEventListener('change', e => { state.staffName = e.target.value; state._staffTouched = true; if (!myStaff()) learnMyStaff(e.target.value); });
   grid.querySelector('#areaPrefSel').addEventListener('change', e => {
     state.areaPref = e.target.value; state.areaCity = '';
     updateCitySelect();
@@ -2391,7 +2404,7 @@ function resetAll() {
   state.ylwTransportIdx = 0; state.chTransportIdx = 0; state.miscCostIdx = 0; state.discount = 0;
   state.ylwTransportCustom = 0; state.chTransportCustom = 0;
   state.ylwTransportCustomLabel = ''; state.chTransportCustomLabel = '';
-  state.customerName = ''; state.staffName = ''; state.area = ''; state.areaPref = ''; state.areaCity = ''; state.areaSub = '';
+  state.customerName = ''; state.staffName = ''; state._staffTouched = false; state.area = ''; state.areaPref = ''; state.areaCity = ''; state.areaSub = '';
   const di = document.getElementById('discInput'); if (di) di.value = '';
   state.tinys   = { modelQtys:{}, sizeOpts:{}, commonOpts:{}, blindIdx:0, blindCount:1, miscOpts:{}, designLv:0, customOpts:[], transportIdx:0, transportCustom:0, transportCustomLabel:'' };
   state.roadie  = { modelQtys:{}, sizeOpts:{}, commonOpts:{}, miscOpts:{}, designLv:0, customOpts:[], transportIdx:0, transportCustom:0, transportCustomLabel:'' };
@@ -3470,7 +3483,7 @@ async function submitChangesForApproval(changes, note) {
   const sel = document.getElementById('reqBySel');
   const who = (sel && sel.value) || myName();
   if (!who) { alert('画面下の「申請者」を選択してください。'); if (sel) sel.focus(); return; }
-  setMyName(who);
+  setMyName(who); learnMyStaff(who);
 
   const preview = changes.slice(0, 10)
     .map(c => `・${c.label}　${c.before == null ? '（未設定）' : fmt(c.before)} → ${fmt(c.after)}`).join('\n');
@@ -3641,7 +3654,7 @@ function renderApprovalSection() {
 function populateRequesterSelect() {
   const sel = document.getElementById('reqBySel');
   if (!sel) return;
-  const cur = sel.value || myName();
+  const cur = sel.value || myStaff() || myName();
   sel.innerHTML = `<option value="">申請者を選択</option>` +
     STAFF_LIST.map(s => `<option value="${escapeAttr(s)}"${s === cur ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
 }
@@ -4117,7 +4130,7 @@ function initGate() {
   if (!sb) { gate.style.display = 'flex'; btn.disabled = true; showErr('ログインの仕組みを読み込めませんでした。画面を読み込み直してください。'); return; }
   sb.auth.getSession().then(async ({ data }) => {
     const sess = data && data.session;
-    if (isStaff(sess)) { gate.style.display = 'none'; bootstrap(); return; }
+    if (isStaff(sess)) { ME_EMAIL = sess.user.email.toLowerCase(); gate.style.display = 'none'; bootstrap(); return; }
     gate.style.display = 'flex';
     if (sess) { await sb.auth.signOut(); showErr('YADOKARI の Google アカウント（@yadokari.net）でログインしてください。'); }
   });

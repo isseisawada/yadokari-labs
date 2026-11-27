@@ -33,5 +33,17 @@
     "participants": [],
     "invoice_number": "",
     "receipt_path": "inputs_202611/web_receipts/github-isseisawada-receipt-2026-11-20.pdf"
+  },
+  {
+    "date": "2026-11-26",
+    "vendor": "東京空港交通リムジンバス（旅CUBE／ANAホールディングス）",
+    "amount": 1000,
+    "kind": "receipt",
+    "account": "電車・バス",
+    "description": "出張：リムジンバス利用",
+    "ocr_description": "空港リムジンバス",
+    "participants": [],
+    "invoice_number": "T6010401050876",
+    "receipt_path": "inputs_202611/web_receipts/mail_1a21643f1f1c3289_1.pdf"
   }
 ]

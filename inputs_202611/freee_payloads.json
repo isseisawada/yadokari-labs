@@ -5,7 +5,7 @@
   "body": {
    "company_id": 845775,
    "title": "経費精算申請1/1",
-   "description": "2026年11月分 経費精算 3件 合計¥5,418。",
+   "description": "2026年11月分 経費精算 4件 合計¥6,418。",
    "purchase_lines": [
     {
      "transaction_date": "2026-11-14",
@@ -39,11 +39,22 @@
       }
      ],
      "receipt_id": 529934405
+    },
+    {
+     "transaction_date": "2026-11-26",
+     "expense_application_lines": [
+      {
+       "description": "出張：リムジンバス利用",
+       "amount": 1000,
+       "expense_application_line_template_id": 289807
+      }
+     ],
+     "receipt_id": 531299253
     }
    ],
    "approval_flow_route_id": 1469199,
    "draft": true,
-   "issue_date": "2026-11-24"
+   "issue_date": "2026-11-27"
   }
  }
 ]

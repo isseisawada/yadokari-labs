@@ -50,6 +50,15 @@
     .mode-short { display: none; }
     /* 作成モード以外はシリーズタブ枠を消す（履歴/管理でヘッダーが横にはみ出すのを防ぐ） */
     body:not([data-mode="create"]) .s-nav-wrap { display: none; }
+    /* PC：作成中は「作成」ボタンを出さない（ロゴで戻れる）。シリーズが入りきらない幅では横に送り、右のボタンに重ならない */
+    @media (min-width: 761px) {
+      body[data-mode="create"] [data-mode-btn="create"] { display: none; }
+      .s-nav-wrap { margin-right: var(--s4); }
+      .s-nav { overflow-x: auto; scrollbar-width: none; }
+      .s-nav::-webkit-scrollbar { display: none; }
+      .s-nav-hint { display: flex; position: absolute; right: 0; top: 0; bottom: 0; align-items: center; padding: 0 var(--s2) 0 var(--s6); pointer-events: none; background: linear-gradient(to right, transparent, var(--white) 55%); color: var(--ink); font-weight: 700; font-size: var(--fs-xl); line-height: 1; transition: opacity .2s; }
+      .s-nav-wrap.at-end .s-nav-hint { opacity: 0; }
+    }
 
     /* LAYOUT */
     .app { display: flex; max-width: 1260px; margin: 0 auto; padding: 24px 16px; gap: 18px; align-items: flex-start; }

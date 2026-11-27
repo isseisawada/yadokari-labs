@@ -50,7 +50,7 @@
 
 デフォルトのマッピング（`submit_expenses.py` の `decide()`）:
 - Suica → 289807 交通費（電車在来線・バス）
-- GO タクシー → 300520 交通費（タクシー）
+- GO タクシー / **Uber（配車。2026-11-27 追加）** → 300520 交通費（タクシー）。Uber Eats（食事の配達）は対象外
 - 東日本旅客鉄道 / JR / 新幹線 → 300519 交通費（特急・新幹線）
 - 石油・SS・ガソリン → 300524 ガソリン代
 - ○○パーク / 駐車場 / パーキング → 300525 駐車場代
@@ -393,7 +393,7 @@ python3 submit_expenses.py --month 8
   `python3 save_mail_receipts.py --month M <JSON...>` に渡すと添付PDFを取り出して保存する
   - 同じ内容のファイル・取り込み済みのメールは保存しない（`inputs_2026MM/mail_receipts.json` に記録）
   - Stripe 系（Anthropic 等）は Invoice と Receipt が両方付くので Receipt だけ残す
-- 検索の目安: `after:YYYY/MM/01 before:YYYY/MM+1/03 from:(invoice@mail.anthropic.com OR sride.co.jp OR stationwork.jp OR telecube.jp OR payments-noreply@google.com OR apple.com OR note.jp OR dropbox.com OR booking.com OR goinc.jp)` と、件名 `領収書 OR receipt OR 請求書 OR invoice`
+- 検索の目安: `after:YYYY/MM/01 before:YYYY/MM+1/03 from:(invoice@mail.anthropic.com OR uber.com OR sride.co.jp OR stationwork.jp OR telecube.jp OR payments-noreply@google.com OR apple.com OR note.jp OR dropbox.com OR booking.com OR goinc.jp)` と、件名 `領収書 OR receipt OR 請求書 OR invoice`
 - 注意（2026年10月分で確認）:
   - **STATION WORK の領収書メールは、管理画面で「領収書発行」を押したときにだけ届く**（自動では来ない。2026-11 澤田さん訂正）。10/3 着の 9/9 利用分は、その日に発行したから。
     発行日と利用日がずれるので、利用日で月を判定し、前月申請済みのものは除外
@@ -433,6 +433,10 @@ python3 submit_expenses.py --month 8
     - 一括発行のPDFは **1ページに複数の領収書が並ぶ**（10月分: 5件で1ページ）。freee は1つの証憑を複数明細に付けられないので
       `/usr/bin/python3 split_go_receipts.py <PDF>` で1件ずつの画像（`GO領収書_YYYYMMDD_金額.png`）に切り分ける。元のPDFは `inputs_2026MM/originals/` へ
 - `save_mail_receipts.py` はメール本文のロゴ等の埋め込み画像は保存しない（2026-11 修正）
+- **Uber（2026-11-27 追加）**: 乗車の領収書メールは noreply@uber.com などから「Uber の乗車領収書」「Your trip with Uber」の件名で届く（アカウントのメールは everlybrothers@gmail.com 宛て。sawada@ の受信箱にも入る）。
+  uber@uber.com の楽天ポイント・Uber Eats の宣伝メールは取り込まない。11/27 時点で 2026-09 以降の乗車領収書メールは0件
+  - 届かないときは Uber アプリ → アカウント → アクティビティ → 乗車を選ぶ →「領収書」→ メールで再送信 / PDF をダウンロードしてチャットへ
+  - 本文に PDF が付かないことがある（HTML 本文のみ）→ 本文を画像化できないので、アプリの PDF を件名「経費」で送ってもらう
   - 法人契約の GO BUSINESS なら立替自体が不要（会社に請求書。利用料5%）
 - カード明細のスクショは「立替の一覧」として使う：明細にあって領収書が無いものを Claude が「足りないものリスト」にして返す
 - 最後に freee（スマホのブラウザ/アプリ）で内容を確認して「申請」を押す
@@ -526,7 +530,7 @@ Suica 24行・金額・日付・科目はほぼ無修正。直されたのは**�
 ### できること（クラウドの Claude だけで完結）
 | 作業 | どうやるか | 試運転の結果 |
 |---|---|---|
-| Gmail から領収書メールを探す | 差出人で絞った検索（`after:YYYY/MM/01 has:attachment from:(goinc.jp OR sride.co.jp OR stationwork.jp OR telecube.jp OR apple.com OR note.jp OR dropbox.com OR booking.com OR eki-net.com …)`） | ✅ 4件ヒット（下記の理由で11月分は0件） |
+| Gmail から領収書メールを探す | 差出人で絞った検索（`after:YYYY/MM/01 has:attachment from:(goinc.jp OR uber.com OR sride.co.jp OR stationwork.jp OR telecube.jp OR apple.com OR note.jp OR dropbox.com OR booking.com OR eki-net.com …)`） | ✅ 4件ヒット（下記の理由で11月分は0件） |
 | 添付PDFの保存 | `get_message(RAW)` → `save_mail_receipts.py`。**今後は `download_gmail_attachment`（2026-11 から使える）で直接取るほうが軽い** | ✅（10月分で実績あり） |
 | GO 一括PDFの分割 | `split_go_receipts.py` | ✅ |
 | 写真・PDF の読み取り | リポジトリにある画像を Claude が直接読む（OCR スクリプトは API キーが無いので使わない） | ✅ |
